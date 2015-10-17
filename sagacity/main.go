@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/thiderman/sagacity/config"
 	"gopkg.in/yaml.v2"
 )
 
@@ -32,10 +33,6 @@ func LoadInfo(p string) (i Info, err error) {
 }
 
 func main() {
-	i, err := LoadInfo("test/data/first.yml")
-	if err != nil {
-		log.Fatal("error pls")
-	}
-
-	fmt.Println(i)
+	conf := config.LoadConfig()
+	fmt.Println(conf)
 }
