@@ -11,6 +11,8 @@ func main() {
 	conf := core.LoadConfig()
 	fmt.Println(conf)
 
+	core.NewRepo(conf.RepoRoot)
+
 	app := core.BuildCLI()
 	app.Run(os.Args)
 }
