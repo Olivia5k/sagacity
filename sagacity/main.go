@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/thiderman/sagacity/config"
+	"github.com/thiderman/sagacity/core"
 	"gopkg.in/yaml.v2"
 )
 
@@ -33,6 +33,6 @@ func LoadInfo(p string) (i Info, err error) {
 }
 
 func main() {
-	conf := config.LoadConfig()
+	conf := core.LoadConfig()
 	fmt.Println(conf)
 }
