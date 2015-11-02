@@ -36,6 +36,13 @@ func BuildCLI(repos map[string]Repo) (app *cli.App) {
 				fmt.Println(key)
 			}
 		}
+
+		// Two arguments - print the item
+		if len(args) == 2 {
+			repo := repos[args[0]]
+			info := repo.Info[args[1]]
+			info.PrintBody()
+		}
 	}
 	return
 }

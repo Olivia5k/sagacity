@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"fmt"
+	text "github.com/tonnerre/golang-text"
 	"gopkg.in/yaml.v2"
 	"os"
 	"sort"
@@ -47,6 +48,12 @@ func LoadInfo(p string) (i Info, err error) {
 
 func (i Info) String() string {
 	return fmt.Sprintf("I: %s", i.ID)
+}
+
+// PrintBody will pretty format the body of the item
+func (i *Info) PrintBody() {
+	out := text.Wrap(i.Body, 80)
+	fmt.Println(out)
 }
 
 // Repo represents a repository of information yaml files.
