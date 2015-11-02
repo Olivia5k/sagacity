@@ -65,6 +65,7 @@ func NewRepo(p string) (r Repo) {
 func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 	if err != nil {
 		log.Println("walk error: ", err)
+		return err
 	}
 
 	if strings.HasSuffix(path, ".yml") {
@@ -77,6 +78,7 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 
 func (r *Repo) loadInfo(path string) {
 	defer r.wg.Done()
+
 	info, err := LoadInfo(path)
 	if err != nil {
 		log.Println("Failed to load info: ", err)
