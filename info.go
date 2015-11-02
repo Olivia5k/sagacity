@@ -1,4 +1,4 @@
-package core
+package main
 
 import (
 	"io/ioutil"
@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fmt"
 	"gopkg.in/yaml.v2"
 	"os"
 	"sync"
@@ -38,10 +37,11 @@ func LoadInfo(p string) (i Info, err error) {
 
 // Repo represents a repository of information yaml files.
 type Repo struct {
-	Key  string
-	Info map[string]Info
-	root string
-	wg   sync.WaitGroup
+	Key     string
+	Info    map[string]Info
+	Control map[string]Info
+	root    string
+	wg      sync.WaitGroup
 }
 
 // NewRepo loads a repository on a path
@@ -53,11 +53,10 @@ func NewRepo(p string) (r Repo) {
 
 	r = Repo{Key: asKey(p), root: path}
 	r.Info = make(map[string]Info)
+	r.Control = make(map[string]Info)
 
 	filepath.Walk(r.root, r.walk)
 	r.wg.Wait()
-
-	fmt.Println(r)
 
 	return
 }
@@ -84,5 +83,11 @@ func (r *Repo) loadInfo(path string) {
 		log.Println("Failed to load info: ", err)
 	}
 
-	r.Info[info.ID] = info
+	// Control files start with an underscore and should not be stored as
+	// normal Info documents.
+	if strings.HasPrefix(asKey(path), "_") {
+		r.Control[info.ID] = info
+	} else {
+		r.Info[info.ID] = info
+	}
 }

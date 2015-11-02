@@ -3,16 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/thiderman/sagacity/core"
 )
 
 func main() {
-	conf := core.LoadConfig()
+	conf := LoadConfig()
 	fmt.Println(conf)
 
-	core.NewRepo(conf.RepoRoot)
+	NewRepo(conf.RepoRoot)
 
-	app := core.BuildCLI()
+	app := BuildCLI()
 	app.Run(os.Args)
 }
