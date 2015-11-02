@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/codegangsta/cli"
 )
 
@@ -12,7 +10,6 @@ func BuildCLI() (app *cli.App) {
 	app.Name = "sagacity"
 	app.Usage = "spread and use knowledge!"
 	app.Action = func(c *cli.Context) {
-		fmt.Println("hehe")
 	}
 
 	return

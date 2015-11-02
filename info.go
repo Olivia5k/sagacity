@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"fmt"
 	"gopkg.in/yaml.v2"
 	"os"
 	"sync"
@@ -43,6 +44,10 @@ func LoadInfo(p string) (i Info, err error) {
 	return
 }
 
+func (i Info) String() string {
+	return fmt.Sprintf("I: %s", i.ID)
+}
+
 // Repo represents a repository of information yaml files.
 type Repo struct {
 	Key     string
@@ -50,6 +55,36 @@ type Repo struct {
 	Control map[string]Info
 	root    string
 	wg      sync.WaitGroup
+}
+
+func (r Repo) String() string {
+	return fmt.Sprintf("R: %s (%d articles)", r.Key, len(r.Info))
+}
+
+// LoadRepositories loads multiple repositories and stores them
+func LoadRepositories(p string) (repos map[string]Repo) {
+	repos = make(map[string]Repo)
+	p = getPath(p)
+	wg := sync.WaitGroup{}
+
+	files, _ := ioutil.ReadDir(p)
+	for _, file := range files {
+		fn := filepath.Join(p, file.Name())
+
+		if _, err := os.Stat(filepath.Join(fn, "_repo.yml")); os.IsNotExist(err) {
+			log.Println(fmt.Sprintf("Skipping repo %s: no _repo.yml found.", file.Name()))
+			continue
+		}
+
+		wg.Add(1)
+		go func(repos map[string]Repo, fn string, wg *sync.WaitGroup) {
+			defer wg.Done()
+			repos[asKey(fn)] = NewRepo(fn)
+		}(repos, fn, &wg)
+	}
+
+	wg.Wait()
+	return
 }
 
 // NewRepo loads a repository on a path

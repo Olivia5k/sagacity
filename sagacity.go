@@ -7,9 +7,9 @@ import (
 
 func main() {
 	conf := LoadConfig()
-	fmt.Println(conf)
+	repos := LoadRepositories(conf.RepoRoot)
 
-	NewRepo(conf.RepoRoot)
+	fmt.Println(repos)
 
 	app := BuildCLI()
 	app.Run(os.Args)
