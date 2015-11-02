@@ -1,3 +1,4 @@
 /sagacity
 /test/junk/*
 /sagacity.test
+*.out
