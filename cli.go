@@ -1,16 +1,32 @@
 package main
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
+	"sort"
 )
 
 // BuildCLI builds the base CLI App() object
-func BuildCLI() (app *cli.App) {
+func BuildCLI(repos map[string]Repo) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "sagacity"
 	app.Usage = "spread and use knowledge!"
-	app.Action = func(c *cli.Context) {
-	}
 
+	app.Action = func(c *cli.Context) {
+		// No arguments - print a sorted list of repositories
+		if len(c.Args()) == 0 {
+			keys := make([]string, 0, len(repos))
+			for key := range repos {
+				keys = append(keys, key)
+			}
+
+			sort.Strings(keys)
+			for _, key := range keys {
+				fmt.Println(key)
+			}
+
+			return
+		}
+	}
 	return
 }
