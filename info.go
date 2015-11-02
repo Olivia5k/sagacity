@@ -11,16 +11,16 @@ import (
 	"sync"
 )
 
+func asKey(p string) string {
+	basename := filepath.Base(p)
+	return strings.TrimSuffix(basename, filepath.Ext(basename))
+}
+
 // Info is the main storage for information. All yaml files map to this.
 type Info struct {
 	ID   string
 	Type string `yaml:"type"`
 	Body string `yaml:"body"`
-}
-
-func asKey(p string) string {
-	basename := filepath.Base(p)
-	return strings.TrimSuffix(basename, filepath.Ext(basename))
 }
 
 // LoadInfo loads an Info object from a file path
