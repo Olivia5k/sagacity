@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -97,6 +98,18 @@ func NewRepo(p string) (r Repo) {
 	r.wg.Wait()
 
 	return
+}
+
+// Keys returns a sorted list of the info keys in the repository
+func (r *Repo) Keys() []string {
+	keys := make([]string, 0, len(r.Info))
+	for _, info := range r.Info {
+		keys = append(keys, info.ID)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
 
 func (r *Repo) walk(path string, info os.FileInfo, err error) error {

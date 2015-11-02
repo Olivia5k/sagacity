@@ -14,7 +14,8 @@ func BuildCLI(repos map[string]Repo) (app *cli.App) {
 
 	app.Action = func(c *cli.Context) {
 		// No arguments - print a sorted list of repositories
-		if len(c.Args()) == 0 {
+		args := c.Args()
+		if len(args) == 0 {
 			keys := make([]string, 0, len(repos))
 			for key := range repos {
 				keys = append(keys, key)
@@ -26,6 +27,14 @@ func BuildCLI(repos map[string]Repo) (app *cli.App) {
 			}
 
 			return
+		}
+
+		// One argument - list the items inside the repository
+		if len(args) == 1 {
+			repo := repos[args[0]]
+			for _, key := range repo.Keys() {
+				fmt.Println(key)
+			}
 		}
 	}
 	return
