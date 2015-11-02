@@ -11,6 +11,14 @@ import (
 	"sync"
 )
 
+func getPath(p string) string {
+	path, _ := filepath.Abs(p)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		log.Fatal(err)
+	}
+	return path
+}
+
 func asKey(p string) string {
 	basename := filepath.Base(p)
 	return strings.TrimSuffix(basename, filepath.Ext(basename))
@@ -46,12 +54,7 @@ type Repo struct {
 
 // NewRepo loads a repository on a path
 func NewRepo(p string) (r Repo) {
-	path, _ := filepath.Abs(p)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatal("no such file or directory: %s", path)
-	}
-
-	r = Repo{Key: asKey(p), root: path}
+	r = Repo{Key: asKey(p), root: getPath(p)}
 	r.Info = make(map[string]Info)
 	r.Control = make(map[string]Info)
 
