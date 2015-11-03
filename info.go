@@ -48,6 +48,12 @@ func (i Info) String() string {
 	return fmt.Sprintf("I: %s", i.ID)
 }
 
+func (i *Info) Execute() {
+	if i.Type == "info" {
+		i.PrintBody()
+	}
+}
+
 // PrintBody will pretty format the body of the item
 func (i *Info) PrintBody() {
 	out := text.Wrap(i.Body, 80)

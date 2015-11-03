@@ -64,11 +64,11 @@ func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 			}
 		}
 
-		// Two arguments - print the item
+		// Two arguments - execute the item
 		if len(args) == 2 {
 			repo := repos[args[0]]
 			info := repo.Info[args[1]]
-			info.PrintBody()
+			info.Execute()
 		}
 	}
 	return
