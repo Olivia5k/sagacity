@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -102,5 +103,30 @@ func (r *Repo) loadInfo(path string) {
 		r.Control[info.ID] = info
 	} else {
 		r.Info[info.ID] = info
+	}
+}
+
+// Helper to run git commands inside of a repository
+func (r *Repo) git(args ...string) {
+	git, err := exec.LookPath("git")
+	if err != nil {
+		log.Fatal("no git :'(   ", err)
+	}
+
+	// why................
+	args = append([]string{git}, args...)
+
+	cmd := exec.Cmd{
+		Path:   git,
+		Args:   args,
+		Dir:    r.root,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	err = cmd.Run()
+	if err != nil {
+		log.Println("git command failed - aborting")
+		log.Fatal(err)
 	}
 }
