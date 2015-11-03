@@ -123,29 +123,3 @@ func (i *Info) ExecuteHost() {
 		log.Fatal("oh noes :(")
 	}
 }
-
-func (i *Info) ask(prompt string) bool {
-	var resp string
-
-	fmt.Print(prompt)
-	_, err := fmt.Scanln(&resp)
-	if err != nil {
-		if err.Error() != "unexpected newline" && err.Error() != "EOF" {
-			log.Fatal(err)
-		} else {
-			return false
-		}
-	}
-
-	if string(strings.ToLower(resp)[0]) == "y" {
-		return true
-	}
-	return false
-}
-
-func (i *Info) getHost() string {
-	if i.Host == "" {
-		return "localhost"
-	}
-	return i.Host
-}
