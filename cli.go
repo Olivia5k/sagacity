@@ -7,7 +7,7 @@ import (
 )
 
 // BuildCLI builds the base CLI App() object
-func BuildCLI(repos map[string]Repo) (app *cli.App) {
+func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "sagacity"
 	app.Usage = "spread and use knowledge!"
@@ -18,6 +18,15 @@ func BuildCLI(repos map[string]Repo) (app *cli.App) {
 			Aliases: []string{"r"},
 			Usage:   "repo commands",
 			Subcommands: []cli.Command{
+				{
+					Name:    "add",
+					Aliases: []string{"a"},
+					Usage:   "add new repositories",
+					Action: func(c *cli.Context) {
+						args := c.Args()
+						AddRepo(conf.RepoRoot, args[0], args[1])
+					},
+				},
 				{
 					Name:    "update",
 					Aliases: []string{"u"},

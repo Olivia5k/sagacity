@@ -58,6 +58,13 @@ func UpdateRepos(repos map[string]Repo) {
 	}
 }
 
+// AddRepo clones a new repository
+func AddRepo(root, name, url string) {
+	dir := filepath.Join(root, name)
+	git("", "clone", url, dir)
+	log.Print("Repository added!")
+}
+
 // NewRepo loads a repository on a path
 func NewRepo(p string) (r Repo) {
 	r = Repo{Key: asKey(p), root: getPath(p)}
