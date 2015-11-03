@@ -58,6 +58,8 @@ func (i *Info) Execute() {
 		i.PrintBody()
 	} else if i.Type == "command" {
 		i.ExecuteCommand()
+	} else if i.Type == "host" {
+		i.ExecuteHost()
 	}
 }
 
@@ -100,6 +102,25 @@ func (i *Info) ExecuteCommand() {
 		}
 	} else {
 		fmt.Println("Doing nothing.")
+	}
+}
+
+// ExecuteHost opens a ssh connection to the specified host
+func (i *Info) ExecuteHost() {
+	ssh, _ := exec.LookPath("ssh")
+	args := []string{ssh, "-t", i.Host}
+
+	cmd := exec.Cmd{
+		Path:   ssh,
+		Args:   args,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+		Stdin:  os.Stdin,
+	}
+
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal("oh noes :(")
 	}
 }
 
