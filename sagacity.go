@@ -6,7 +6,7 @@ import (
 
 func main() {
 	conf := LoadConfig()
-	repos := LoadRepositories(conf.RepoRoot)
+	repos := LoadRepos(conf.RepoRoot)
 	app := BuildCLI(repos)
 	app.Run(os.Args)
 }

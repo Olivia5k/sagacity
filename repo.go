@@ -24,8 +24,8 @@ func (r Repo) String() string {
 	return fmt.Sprintf("R: %s (%d articles)", r.Key, len(r.Info))
 }
 
-// LoadRepositories loads multiple repositories and stores them
-func LoadRepositories(p string) (repos map[string]Repo) {
+// LoadRepos loads multiple repositories and stores them
+func LoadRepos(p string) (repos map[string]Repo) {
 	repos = make(map[string]Repo)
 	p = getPath(p)
 	wg := sync.WaitGroup{}
