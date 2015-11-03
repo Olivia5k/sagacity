@@ -51,6 +51,14 @@ func LoadRepos(p string) (repos map[string]Repo) {
 	return
 }
 
+// UpdateRepos will run git pull on the repos
+func UpdateRepos(repos map[string]Repo) {
+	for key, repo := range repos {
+		log.Printf("Updating %s...", key)
+		repo.git("pull", "origin", "master")
+	}
+}
+
 // NewRepo loads a repository on a path
 func NewRepo(p string) (r Repo) {
 	r = Repo{Key: asKey(p), root: getPath(p)}

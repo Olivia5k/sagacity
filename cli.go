@@ -12,6 +12,24 @@ func BuildCLI(repos map[string]Repo) (app *cli.App) {
 	app.Name = "sagacity"
 	app.Usage = "spread and use knowledge!"
 
+	app.Commands = []cli.Command{
+		{
+			Name:    "repo",
+			Aliases: []string{"r"},
+			Usage:   "repo commands",
+			Subcommands: []cli.Command{
+				{
+					Name:    "update",
+					Aliases: []string{"u"},
+					Usage:   "update repositories",
+					Action: func(c *cli.Context) {
+						UpdateRepos(repos)
+					},
+				},
+			},
+		},
+	}
+
 	app.Action = func(c *cli.Context) {
 		// No arguments - print a sorted list of repositories
 		args := c.Args()
