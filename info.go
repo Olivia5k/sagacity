@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	text "github.com/tonnerre/golang-text"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -78,8 +79,52 @@ func (i *Info) ExecuteCommand() {
 		Stderr: os.Stderr,
 	}
 
-	err := cmd.Run()
-	if err != nil {
-		log.Fatal("oh noes :(")
+	blue := color.New(color.FgBlue, color.Bold).SprintfFunc()
+	magenta := color.New(color.FgMagenta, color.Bold).SprintfFunc()
+	yellow := color.New(color.FgYellow, color.Bold).SprintfFunc()
+	green := color.New(color.FgGreen, color.Bold).SprintfFunc()
+
+	fmt.Println(
+		fmt.Sprintf("%s: %s\nRuns %s on %s\n",
+			blue(i.ID),
+			magenta(i.Summary),
+			yellow(i.Command),
+			green(i.getHost()),
+		),
+	)
+
+	if i.ask("Do you want to continue? [y/N] ") {
+		err := cmd.Run()
+		if err != nil {
+			log.Fatal("oh noes :(")
+		}
+	} else {
+		fmt.Println("Doing nothing.")
 	}
+}
+
+func (i *Info) ask(prompt string) bool {
+	var resp string
+
+	fmt.Print(prompt)
+	_, err := fmt.Scanln(&resp)
+	if err != nil {
+		if err.Error() != "unexpected newline" && err.Error() != "EOF" {
+			log.Fatal(err)
+		} else {
+			return false
+		}
+	}
+
+	if string(strings.ToLower(resp)[0]) == "y" {
+		return true
+	}
+	return false
+}
+
+func (i *Info) getHost() string {
+	if i.Host == "" {
+		return "localhost"
+	}
+	return i.Host
 }
