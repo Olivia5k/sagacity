@@ -44,8 +44,8 @@ type Info struct {
 	Type    string `yaml:"type"`
 	Summary string `yaml:"summary"`
 	Body    string `yaml:"body"`
-	Host    string `yaml:"host"`
 	Command string `yaml:"command"`
+	Host    Host   `yaml:"host"`
 }
 
 func (i Info) String() string {
@@ -91,11 +91,11 @@ func (i *Info) ExecuteCommand() {
 			blue(i.ID),
 			magenta(i.Summary),
 			yellow(i.Command),
-			green(i.getHost()),
+			green(i.Host.getHost()),
 		),
 	)
 
-	if i.ask("Do you want to continue? [y/N] ") {
+	if ask("Do you want to continue? [y/N] ") {
 		err := cmd.Run()
 		if err != nil {
 			log.Fatal("oh noes :(")
@@ -108,7 +108,7 @@ func (i *Info) ExecuteCommand() {
 // ExecuteHost opens a ssh connection to the specified host
 func (i *Info) ExecuteHost() {
 	ssh, _ := exec.LookPath("ssh")
-	args := []string{ssh, "-t", i.Host}
+	args := []string{ssh, "-t", i.Host.FQDN}
 
 	cmd := exec.Cmd{
 		Path:   ssh,
