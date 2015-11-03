@@ -69,18 +69,11 @@ func (i *Info) PrintBody() {
 	fmt.Println(out)
 }
 
-// ExecuteCommand will execute the command specified by the item
+// ExecuteCommand will execute the command specified by the item.
+//
+// If the `host` attribute is set, the command will be executed on the host(s)
+// specified.
 func (i *Info) ExecuteCommand() {
-	sh, _ := exec.LookPath("sh")
-	args := []string{sh, "-c", i.Command}
-
-	cmd := exec.Cmd{
-		Path:   sh,
-		Args:   args,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-
 	blue := color.New(color.FgBlue, color.Bold).SprintfFunc()
 	magenta := color.New(color.FgMagenta, color.Bold).SprintfFunc()
 	yellow := color.New(color.FgYellow, color.Bold).SprintfFunc()
@@ -95,31 +88,32 @@ func (i *Info) ExecuteCommand() {
 		),
 	)
 
-	if ask("Do you want to continue? [y/N] ") {
-		err := cmd.Run()
-		if err != nil {
-			log.Fatal("oh noes :(")
-		}
-	} else {
+	if !ask("Do you want to continue? [y/N] ") {
 		fmt.Println("Doing nothing.")
+		os.Exit(1)
 	}
-}
 
-// ExecuteHost opens a ssh connection to the specified host
-func (i *Info) ExecuteHost() {
-	ssh, _ := exec.LookPath("ssh")
-	args := []string{ssh, "-t", i.Host.FQDN}
+	if i.Host.hasHost() {
+		i.Host.Execute(i.Command)
+		return
+	}
+
+	sh, _ := exec.LookPath("sh")
+	args := []string{sh, "-c", i.Command}
 
 	cmd := exec.Cmd{
-		Path:   ssh,
+		Path:   sh,
 		Args:   args,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-		Stdin:  os.Stdin,
 	}
-
 	err := cmd.Run()
 	if err != nil {
 		log.Fatal("oh noes :(")
 	}
+
+}
+
+// ExecuteHost opens a ssh connection to the specified host
+func (i *Info) ExecuteHost() {
 }
