@@ -46,17 +46,16 @@ func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 			return
 		}
 
-		// One argument - list the items inside the repository
-		if len(args) == 1 {
-			repo := repos[args[0]]
-			repo.Execute()
-		}
-
-		// Two arguments - execute the item
-		if len(args) == 2 {
-			repo := repos[args[0]]
-			info := repo.Info[args[1]]
-			info.Execute()
+		// More arguments.
+		// If the first argument given matches a repo, use that one and run
+		// repo.Execute() with the cli context so it can determine what to do.
+		//
+		// If not, list the available repositories.
+		if repo, ok := repos[args[0]]; ok {
+			repo.Execute(c)
+		} else {
+			fmt.Printf("%s: no such repo. Available repos are:\n\n", args[0])
+			ListRepos(repos)
 		}
 	}
 	return

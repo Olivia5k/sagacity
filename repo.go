@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/codegangsta/cli"
 	"io/ioutil"
 	"log"
 	"os"
@@ -104,9 +105,37 @@ func (r *Repo) Keys() []string {
 	return keys
 }
 
-// Execute will print the index of the repo
-func (r *Repo) Execute() {
-	for _, key := range r.Keys() {
+// Execute determine what to do:
+//
+// If the last argument in the command line from c.Args() given points to a
+// repo, the index of the loop will be printed.
+//
+// If the last argument is an Info item, it will be executed.
+func (r *Repo) Execute(c *cli.Context) {
+	var repo Repo
+	var info Info
+	var ok bool
+	repo = *r
+
+	// The first argument is not needed since it was used to determine the
+	// location to this very repo.
+	args := c.Args()[1:]
+	for _, arg := range args {
+		// If we can find an info with the key provided, execute that right away!
+		if info, ok = repo.Info[arg]; ok {
+			info.Execute()
+			return
+		}
+
+		// Otherwise, check if we have a subrepo matching the argument If we do,
+		// `repo will be set to the new one, and the next iteration will check
+		// deeper into the tree. If not, we need to break the loop.
+		if repo, ok = repo.Subrepos[arg]; !ok {
+			break
+		}
+	}
+
+	for _, key := range repo.Keys() {
 		fmt.Println(key)
 	}
 }
