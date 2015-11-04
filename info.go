@@ -60,6 +60,8 @@ func (i *Info) Execute() {
 		i.ExecuteCommand()
 	} else if i.Type == "host" {
 		i.ExecuteHost()
+	} else {
+		log.Fatal("Unknown type:", i.Type)
 	}
 }
 
