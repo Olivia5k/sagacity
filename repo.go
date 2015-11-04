@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/fatih/color"
 	"io/ioutil"
 	"log"
 	"os"
@@ -105,6 +106,18 @@ func (r *Repo) Keys() []string {
 	return keys
 }
 
+// SubrepoKeys returns a sorted list of the subrepo keys in the repository
+func (r *Repo) SubrepoKeys() []string {
+	keys := make([]string, 0, len(r.Subrepos))
+	for _, sub := range r.Subrepos {
+		keys = append(keys, sub.Key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
 // Execute determine what to do:
 //
 // If the last argument in the command line from c.Args() given points to a
@@ -135,6 +148,12 @@ func (r *Repo) Execute(c *cli.Context) {
 		}
 	}
 
+	// Nothing matched, or the end node is a repo. Print the contents,
+	// beginning with a blue listing of subrepos
+	blue := color.New(color.FgBlue, color.Bold).SprintfFunc()
+	for _, key := range repo.SubrepoKeys() {
+		fmt.Println(blue(key))
+	}
 	for _, key := range repo.Keys() {
 		fmt.Println(key)
 	}
