@@ -47,6 +47,6 @@ func (h *Host) Execute(extra string) {
 
 	err := cmd.Run()
 	if err != nil {
-		log.Fatal("oh noes :(")
+		log.Fatal("ssh command failed: ", err)
 	}
 }
