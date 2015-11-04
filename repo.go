@@ -193,12 +193,7 @@ func (r *Repo) isSubrepo(path string) bool {
 		return false
 	}
 
-	matches, _ := filepath.Glob(filepath.Join(path, "_*.yaml"))
-	if len(matches) != 0 {
-		return true
-	}
-
-	return false
+	return true
 }
 
 // Helper to run git commands inside of a repository
