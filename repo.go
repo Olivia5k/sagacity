@@ -42,10 +42,10 @@ func LoadRepos(p string) (repos map[string]Repo) {
 		}
 
 		wg.Add(1)
-		go func(repos map[string]Repo, fn string, wg *sync.WaitGroup) {
+		go func() {
 			defer wg.Done()
 			repos[asKey(fn)] = NewRepo(fn)
-		}(repos, fn, &wg)
+		}()
 	}
 
 	wg.Wait()
