@@ -61,3 +61,37 @@ func TestNewRepoIgnoresNonYamlJunk(t *testing.T) {
 	assert.Equal(len(r.Info), 0)
 	assert.Equal(len(r.Control), 0)
 }
+
+func TestNewRepoNestsDeep(t *testing.T) {
+	assert := assert.New(t)
+
+	dir := "test/deep/"
+	r := NewRepo(dir)
+
+	one := r.Subrepos["one"]
+	two := one.Subrepos["two"]
+	three := two.Subrepos["three"]
+	four := three.Subrepos["four"]
+	five := four.Subrepos["five"]
+
+	assert.Equal(five.Info["first"].Body, "glitteringprizes")
+}
+
+func TestNewRepoNestsDeepAndDoesNotPutItemsOnTopLevels(t *testing.T) {
+	assert := assert.New(t)
+
+	dir := "test/deep/"
+	r := NewRepo(dir)
+
+	one := r.Subrepos["one"]
+	two := one.Subrepos["two"]
+	three := two.Subrepos["three"]
+	four := three.Subrepos["four"]
+	five := four.Subrepos["five"]
+
+	assert.Equal(len(one.Info), 0)
+	assert.Equal(len(two.Info), 0)
+	assert.Equal(len(three.Info), 0)
+	assert.Equal(len(four.Info), 0)
+	assert.Equal(len(five.Info), 1)
+}

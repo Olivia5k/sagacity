@@ -149,6 +149,7 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 	if info.IsDir() && r.isSubrepo(path) {
 		r.wg.Add(1)
 		go r.loadSubrepo(path)
+		return filepath.SkipDir
 
 	} else if strings.HasSuffix(path, ".yml") {
 		r.wg.Add(1)
