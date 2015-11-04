@@ -13,11 +13,12 @@ import (
 
 // Repo represents a repository of information yaml files.
 type Repo struct {
-	Key     string
-	Info    map[string]Info
-	Control map[string]Info
-	root    string
-	wg      sync.WaitGroup
+	Key      string
+	Info     map[string]Info
+	Control  map[string]Info
+	Subrepos map[string]Repo
+	root     string
+	wg       sync.WaitGroup
 }
 
 func (r Repo) String() string {
@@ -70,6 +71,7 @@ func NewRepo(p string) (r Repo) {
 	r = Repo{Key: asKey(p), root: getPath(p)}
 	r.Info = make(map[string]Info)
 	r.Control = make(map[string]Info)
+	r.Subrepos = make(map[string]Repo)
 
 	filepath.Walk(r.root, r.walk)
 	r.wg.Wait()
@@ -95,7 +97,11 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 		return err
 	}
 
-	if strings.HasSuffix(path, ".yml") {
+	if info.IsDir() && r.isSubrepo(path) {
+		r.wg.Add(1)
+		go r.loadSubrepo(path)
+
+	} else if strings.HasSuffix(path, ".yml") {
 		r.wg.Add(1)
 		go r.loadInfo(path)
 	}
@@ -118,6 +124,31 @@ func (r *Repo) loadInfo(path string) {
 	} else {
 		r.Info[info.ID] = info
 	}
+}
+
+func (r *Repo) loadSubrepo(path string) {
+	defer r.wg.Done()
+	nr := NewRepo(path)
+	r.Subrepos[nr.Key] = nr
+}
+
+func (r *Repo) isSubrepo(path string) bool {
+	// This is the root...
+	if r.root == path {
+		return false
+	}
+
+	// Dotfile, like .git or whatever. Skip.
+	if strings.HasPrefix(filepath.Base(path), ".") {
+		return false
+	}
+
+	matches, _ := filepath.Glob(filepath.Join(path, "_*.yml"))
+	if len(matches) != 0 {
+		return true
+	}
+
+	return false
 }
 
 // Helper to run git commands inside of a repository
