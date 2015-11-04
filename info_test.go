@@ -7,7 +7,7 @@ import (
 
 func TestLoadInfo(t *testing.T) {
 	assert := assert.New(t)
-	fn := "test/data/first.yml"
+	fn := "test/data/first.yaml"
 	i, err := LoadInfo(fn)
 
 	assert.Nil(err)

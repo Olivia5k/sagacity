@@ -36,8 +36,8 @@ func LoadRepos(p string) (repos map[string]Repo) {
 	for _, file := range files {
 		fn := filepath.Join(p, file.Name())
 
-		if _, err := os.Stat(filepath.Join(fn, "_repo.yml")); os.IsNotExist(err) {
-			log.Println(fmt.Sprintf("Skipping repo %s: no _repo.yml found.", file.Name()))
+		if _, err := os.Stat(filepath.Join(fn, "_repo.yaml")); os.IsNotExist(err) {
+			log.Println(fmt.Sprintf("Skipping repo %s: no _repo.yaml found.", file.Name()))
 			continue
 		}
 
@@ -151,7 +151,7 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 		go r.loadSubrepo(path)
 		return filepath.SkipDir
 
-	} else if strings.HasSuffix(path, ".yml") {
+	} else if strings.HasSuffix(path, ".yaml") {
 		r.wg.Add(1)
 		go r.loadInfo(path)
 	}
@@ -193,7 +193,7 @@ func (r *Repo) isSubrepo(path string) bool {
 		return false
 	}
 
-	matches, _ := filepath.Glob(filepath.Join(path, "_*.yml"))
+	matches, _ := filepath.Glob(filepath.Join(path, "_*.yaml"))
 	if len(matches) != 0 {
 		return true
 	}

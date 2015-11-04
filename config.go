@@ -10,7 +10,7 @@ import (
 
 func getConfigFilename() string {
 	root := xdg.Paths{XDGSuffix: "sagacity"}
-	file, err := root.ConfigFile("sagacity.yml")
+	file, err := root.ConfigFile("sagacity.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
