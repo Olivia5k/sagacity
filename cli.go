@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	"sort"
 )
 
 // BuildCLI builds the base CLI App() object
@@ -43,16 +42,7 @@ func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 		// No arguments - print a sorted list of repositories
 		args := c.Args()
 		if len(args) == 0 {
-			keys := make([]string, 0, len(repos))
-			for key := range repos {
-				keys = append(keys, key)
-			}
-
-			sort.Strings(keys)
-			for _, key := range keys {
-				fmt.Println(key)
-			}
-
+			ListRepos(repos)
 			return
 		}
 

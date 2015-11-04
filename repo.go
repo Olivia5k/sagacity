@@ -79,6 +79,19 @@ func NewRepo(p string) (r Repo) {
 	return
 }
 
+// ListRepos prints a sorted list of available repostiories.
+func ListRepos(repos map[string]Repo) {
+	keys := make([]string, 0, len(repos))
+	for key := range repos {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+	for _, key := range keys {
+		fmt.Println(key)
+	}
+}
+
 // Keys returns a sorted list of the info keys in the repository
 func (r *Repo) Keys() []string {
 	keys := make([]string, 0, len(r.Info))
