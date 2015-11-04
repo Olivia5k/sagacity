@@ -146,9 +146,17 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 		return err
 	}
 
+	// Dotfile, like .git or whatever. Skip.
+	if strings.HasPrefix(filepath.Base(path), ".") {
+		return filepath.SkipDir
+	}
+
 	if info.IsDir() && r.isSubrepo(path) {
 		r.wg.Add(1)
 		go r.loadSubrepo(path)
+
+		// Return SkipDir since the directory will be parsed by the
+		// NewRepo call inside of loadSubrepo()
 		return filepath.SkipDir
 
 	} else if strings.HasSuffix(path, ".yaml") {
@@ -185,11 +193,6 @@ func (r *Repo) loadSubrepo(path string) {
 func (r *Repo) isSubrepo(path string) bool {
 	// This is the root...
 	if r.root == path {
-		return false
-	}
-
-	// Dotfile, like .git or whatever. Skip.
-	if strings.HasPrefix(filepath.Base(path), ".") {
 		return false
 	}
 
