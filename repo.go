@@ -91,6 +91,13 @@ func (r *Repo) Keys() []string {
 	return keys
 }
 
+// Execute will print the index of the repo
+func (r *Repo) Execute() {
+	for _, key := range r.Keys() {
+		fmt.Println(key)
+	}
+}
+
 func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 	if err != nil {
 		log.Println("walk error: ", err)

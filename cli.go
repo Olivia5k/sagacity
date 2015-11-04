@@ -59,9 +59,7 @@ func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 		// One argument - list the items inside the repository
 		if len(args) == 1 {
 			repo := repos[args[0]]
-			for _, key := range repo.Keys() {
-				fmt.Println(key)
-			}
+			repo.Execute()
 		}
 
 		// Two arguments - execute the item
