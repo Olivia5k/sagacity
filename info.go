@@ -116,4 +116,5 @@ func (i *Info) ExecuteCommand() {
 
 // ExecuteHost opens a ssh connection to the specified host
 func (i *Info) ExecuteHost() {
+	i.Host.Execute("") // Called with no args - new ssh session
 }
