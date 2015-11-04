@@ -35,7 +35,7 @@ func (h *Host) Execute(extra string) {
 	e := strings.Split(extra, " ")
 
 	// ...and join them into the arguments list.
-	args := append([]string{ssh, h.FQDN, "-t"}, e...)
+	args := append([]string{ssh, h.FQDN, "-A", "-t"}, e...)
 
 	cmd := exec.Cmd{
 		Path:   ssh,
