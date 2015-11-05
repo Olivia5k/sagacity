@@ -133,10 +133,12 @@ func (r *Repo) Execute(c *cli.Context) {
 	// The first argument is not needed since it was used to determine the
 	// location to this very repo.
 	args := c.Args()[1:]
-	for _, arg := range args {
+	for x, arg := range args {
 		// If we can find an info with the key provided, execute that right away!
 		if info, ok = repo.Info[arg]; ok {
-			info.Execute()
+			// Pass the remaining arguments into the Execution call so that it can
+			// process them accordingly.
+			info.Execute(args[x+1:])
 			return
 		}
 

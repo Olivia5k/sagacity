@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
 	text "github.com/tonnerre/golang-text"
 	"gopkg.in/yaml.v2"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -27,11 +29,11 @@ func LoadInfo(p string) (i Info, err error) {
 // Info is the main storage for information. All yaml files map to this.
 type Info struct {
 	ID      string
-	Type    string `yaml:"type"`
-	Summary string `yaml:"summary"`
-	Body    string `yaml:"body"`
-	Command string `yaml:"command"`
-	Hosts   []Host `yaml:"hosts"`
+	Type    string              `yaml:"type"`
+	Summary string              `yaml:"summary"`
+	Body    string              `yaml:"body"`
+	Command string              `yaml:"command"`
+	Hosts   map[string]Category `yaml:"types"`
 }
 
 func (i Info) String() string {
@@ -39,13 +41,13 @@ func (i Info) String() string {
 }
 
 // Execute will figure out the type of the info and execute accordingly
-func (i *Info) Execute() {
+func (i *Info) Execute(c cli.Args) {
 	if i.Type == "info" {
 		i.PrintBody()
 	} else if i.Type == "command" {
 		i.ExecuteCommand()
 	} else if i.Type == "host" {
-		i.ExecuteHost()
+		i.ExecuteHost(c)
 	} else {
 		log.Fatal("Unknown type:", i.Type)
 	}
@@ -81,7 +83,7 @@ func (i *Info) ExecuteCommand() {
 		os.Exit(1)
 	}
 
-	host := i.GetHost()
+	host := PrimaryHost(i.Hosts)
 	if host.hasHost() {
 		host.Execute(i.Command)
 		return
@@ -104,24 +106,45 @@ func (i *Info) ExecuteCommand() {
 }
 
 // ExecuteHost opens a ssh connection to the specified host
-func (i *Info) ExecuteHost() {
-	i.GetHost().Execute("") // Called with no args - new ssh session
-}
+func (i *Info) ExecuteHost(c cli.Args) {
+	clen := len(c)
+	switch clen {
+	case 0:
+		// No further arguments - we have selected a host entry but no type.
+		// Print the list of hosts.
+		PrintHost(i.Hosts)
+	case 1, 2:
+		t := c[0]
+		if cat, ok := i.Hosts[t]; ok {
+			if clen == 1 {
+				// One argument, go to the primary of that category
+				cat.PrimaryHost().Execute("")
+			} else {
+				// Two arguments, go to specified host
+				x, err := strconv.Atoi(c[1])
+				if err != nil {
+					log.Fatal("Non-integer argument:", c[1])
+				}
 
-// GetHost will return the primary host of the item
-func (i *Info) GetHost() *Host {
-	return &i.Hosts[0]
-}
+				host := cat.Hosts[x]
+				host.Execute("")
+			}
 
-func (i *Info) getHosts() []string {
-	hosts := make([]string, 0, len(i.Hosts))
-	for _, host := range i.Hosts {
-		if host.FQDN == "" {
-			hosts = append(hosts, "localhost")
 		} else {
-			hosts = append(hosts, host.FQDN)
+			fmt.Println("No such type:", t)
+			fmt.Println(
+				fmt.Sprintf("Choices are: %s", strings.Join(ListTypes(i.Hosts), ", ")),
+			)
+			os.Exit(1)
 		}
 	}
+}
 
-	return hosts
+// getHosts gets a string representation of all of the hosts in the item
+func (i *Info) getHosts() (hosts []string) {
+	for _, host := range GetHosts(i.Hosts) {
+		hosts = append(hosts, host.FQDN)
+	}
+
+	return
 }
