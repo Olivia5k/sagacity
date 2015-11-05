@@ -45,7 +45,7 @@ type Info struct {
 	Summary string `yaml:"summary"`
 	Body    string `yaml:"body"`
 	Command string `yaml:"command"`
-	Host    Host   `yaml:"host"`
+	Hosts   []Host `yaml:"hosts"`
 }
 
 func (i Info) String() string {
@@ -86,7 +86,7 @@ func (i *Info) ExecuteCommand() {
 			blue(i.ID),
 			magenta(i.Summary),
 			yellow(i.Command),
-			green(i.Host.getHost()),
+			green(strings.Join(i.getHosts(), ", ")),
 		),
 	)
 
@@ -95,8 +95,9 @@ func (i *Info) ExecuteCommand() {
 		os.Exit(1)
 	}
 
-	if i.Host.hasHost() {
-		i.Host.Execute(i.Command)
+	host := i.GetHost()
+	if host.hasHost() {
+		host.Execute(i.Command)
 		return
 	}
 
@@ -118,5 +119,23 @@ func (i *Info) ExecuteCommand() {
 
 // ExecuteHost opens a ssh connection to the specified host
 func (i *Info) ExecuteHost() {
-	i.Host.Execute("") // Called with no args - new ssh session
+	i.GetHost().Execute("") // Called with no args - new ssh session
+}
+
+// GetHost will return the primary host of the item
+func (i *Info) GetHost() *Host {
+	return &i.Hosts[0]
+}
+
+func (i *Info) getHosts() []string {
+	hosts := make([]string, 0, len(i.Hosts))
+	for _, host := range i.Hosts {
+		if host.FQDN == "" {
+			hosts = append(hosts, "localhost")
+		} else {
+			hosts = append(hosts, host.FQDN)
+		}
+	}
+
+	return hosts
 }

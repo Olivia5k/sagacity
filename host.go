@@ -13,13 +13,6 @@ type Host struct {
 	Role string `yaml:"role"`
 }
 
-func (h *Host) getHost() string {
-	if h.FQDN == "" {
-		return "localhost"
-	}
-	return h.FQDN
-}
-
 // hasHost returns true if there is a Host definition and false if not.
 func (h *Host) hasHost() bool {
 	return h.FQDN != "" || h.Role != ""
