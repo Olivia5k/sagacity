@@ -9,22 +9,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
-
-func getPath(p string) string {
-	path, _ := filepath.Abs(p)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatal(err)
-	}
-	return path
-}
-
-func asKey(p string) string {
-	basename := filepath.Base(p)
-	return strings.TrimSuffix(basename, filepath.Ext(basename))
-}
 
 // LoadInfo loads an Info object from a file path
 func LoadInfo(p string) (i Info, err error) {

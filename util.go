@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -53,4 +54,17 @@ func ask(prompt string) bool {
 		return true
 	}
 	return false
+}
+
+func getPath(p string) string {
+	path, _ := filepath.Abs(p)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		log.Fatal(err)
+	}
+	return path
+}
+
+func asKey(p string) string {
+	basename := filepath.Base(p)
+	return strings.TrimSuffix(basename, filepath.Ext(basename))
 }
