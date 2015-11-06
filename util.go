@@ -51,6 +51,7 @@ func ask(prompt string) bool {
 	}
 
 	if string(strings.ToLower(resp)[0]) == "y" {
+		fmt.Println() // To separate output and prompt
 		return true
 	}
 	return false
