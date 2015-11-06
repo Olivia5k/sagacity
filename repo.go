@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
@@ -19,6 +20,7 @@ type Repo struct {
 	Info     map[string]Info
 	Control  map[string]Info
 	Subrepos map[string]Repo
+	Parent   *Repo
 	root     string
 	wg       sync.WaitGroup
 }
@@ -125,28 +127,25 @@ func (r *Repo) SubrepoKeys() []string {
 //
 // If the last argument is an Info item, it will be executed.
 func (r *Repo) Execute(c *cli.Context) {
-	var repo Repo
-	var info Info
-	var ok bool
-	repo = *r
+	var repo *Repo
+	var remaining []string
+	repo = r
 
 	// The first argument is not needed since it was used to determine the
 	// location to this very repo.
 	args := c.Args()[1:]
-	for x, arg := range args {
-		// If we can find an info with the key provided, execute that right away!
-		if info, ok = repo.Info[arg]; ok {
-			// Pass the remaining arguments into the Execution call so that it can
-			// process them accordingly.
-			info.Execute(args[x+1:])
-			return
-		}
 
-		// Otherwise, check if we have a subrepo matching the argument If we do,
-		// `repo will be set to the new one, and the next iteration will check
-		// deeper into the tree. If not, we need to break the loop.
-		if repo, ok = repo.Subrepos[arg]; !ok {
-			break
+	if len(args) != 0 {
+		// No Info was found. Figure out if there is a subrepo in the query somewhere
+		// TODO(thiderman): Handle if there are remaining left.
+		repo, remaining, _ = r.GetSubrepo(args)
+
+		if len(remaining) > 0 {
+			// Try to find the Info. If it is found, execute it and don't do anything else.
+			if info, ok := repo.Info[remaining[0]]; ok {
+				info.Execute(repo, remaining[1:])
+				return
+			}
 		}
 	}
 
@@ -159,6 +158,82 @@ func (r *Repo) Execute(c *cli.Context) {
 	for _, key := range repo.Keys() {
 		fmt.Println(key)
 	}
+}
+
+// GetHost will return a Host as defined by the list of arguments
+//
+// `args` is to be a string containing space separated identifiers to find a
+// host category.
+func (r *Repo) GetHost(def string) (h *Host) {
+	args := strings.Split(def, " ")
+	if len(args) < 2 {
+		log.Fatal("Too few identifiers in host string. Need at least 2.")
+	}
+
+	args = append([]string{"hosts"}, args...)
+
+	info, remaining, err := r.GetInfo(args)
+	if err != nil {
+		log.Print(err)
+		log.Fatal("No host could be found")
+	}
+
+	cat := info.Hosts[remaining[0]]
+	return cat.PrimaryHost()
+}
+
+// GetInfo will return an Info as defined by the list of arguments
+//
+// If successful, a *Info is returned along with the remaining unparsed arguments.
+func (r *Repo) GetInfo(args []string) (*Info, []string, error) {
+	var info Info
+	var ok bool
+
+	repo, remaining, err := r.GetSubrepo(args)
+	if err != nil {
+		log.Print(repo)
+		return nil, []string{}, errors.New(
+			"No matching Info found because no subrepo matched the query.",
+		)
+	}
+
+	if info, ok = repo.Info[remaining[0]]; ok {
+		return &info, remaining[1:], nil
+	}
+
+	return nil, []string{}, errors.New("No matching Info found.")
+}
+
+// GetSubrepo will return an Info as defined by the list of arguments
+//
+// If successful, a *Repo is returned along with the remaining unparsed arguments.
+func (r *Repo) GetSubrepo(args []string) (*Repo, []string, error) {
+	var err error
+
+	if len(args) == 0 {
+		return r, args, nil
+	}
+
+	arg := args[0]
+	if repo, ok := r.Subrepos[arg]; ok {
+		return repo.GetSubrepo(args[1:])
+	}
+
+	if _, ok := r.Info[arg]; !ok {
+		err = fmt.Errorf("Subrepo did not exist: %s", arg)
+	}
+	return r, args, err
+}
+
+// ParentRepo parses the repo tree upwards until it finds the root repository
+//
+// This is used by things like command execution, where the current repository would be
+// `commands` or a subrepository, but the root is needed for host discovery.
+func (r *Repo) ParentRepo() *Repo {
+	if &r.Parent == nil {
+		return r
+	}
+	return r.Parent
 }
 
 func (r *Repo) walk(path string, info os.FileInfo, err error) error {
@@ -208,6 +283,7 @@ func (r *Repo) loadInfo(path string) {
 func (r *Repo) loadSubrepo(path string) {
 	defer r.wg.Done()
 	nr := NewRepo(path)
+	nr.Parent = r
 	r.Subrepos[nr.Key] = nr
 }
 

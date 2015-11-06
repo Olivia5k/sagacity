@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/fatih/color"
+	// "github.com/fatih/color"
 	text "github.com/tonnerre/golang-text"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
+	// "os/exec"
 	"strconv"
 	"strings"
 )
@@ -32,7 +32,7 @@ type Info struct {
 	Type    string              `yaml:"type"`
 	Summary string              `yaml:"summary"`
 	Body    string              `yaml:"body"`
-	Command string              `yaml:"command"`
+	Command Command             `yaml:"command"`
 	Hosts   map[string]Category `yaml:"types"`
 }
 
@@ -41,11 +41,11 @@ func (i Info) String() string {
 }
 
 // Execute will figure out the type of the info and execute accordingly
-func (i *Info) Execute(c cli.Args) {
+func (i *Info) Execute(r *Repo, c cli.Args) {
 	if i.Type == "info" {
 		i.PrintBody()
 	} else if i.Type == "command" {
-		i.ExecuteCommand()
+		i.Command.Execute(r, c)
 	} else if i.Type == "host" {
 		i.ExecuteHost(c)
 	} else {
@@ -57,52 +57,6 @@ func (i *Info) Execute(c cli.Args) {
 func (i *Info) PrintBody() {
 	out := text.Wrap(i.Body, 80)
 	fmt.Println(out)
-}
-
-// ExecuteCommand will execute the command specified by the item.
-//
-// If the `host` attribute is set, the command will be executed on the host(s)
-// specified.
-func (i *Info) ExecuteCommand() {
-	blue := color.New(color.FgBlue, color.Bold).SprintfFunc()
-	magenta := color.New(color.FgMagenta, color.Bold).SprintfFunc()
-	yellow := color.New(color.FgYellow, color.Bold).SprintfFunc()
-	green := color.New(color.FgGreen, color.Bold).SprintfFunc()
-
-	fmt.Println(
-		fmt.Sprintf("%s: %s\nRuns %s on %s\n",
-			blue(i.ID),
-			magenta(i.Summary),
-			yellow(i.Command),
-			green(strings.Join(i.getHosts(), ", ")),
-		),
-	)
-
-	if !ask("Do you want to continue? [y/N] ") {
-		fmt.Println("Doing nothing.")
-		os.Exit(1)
-	}
-
-	host := PrimaryHost(i.Hosts)
-	if host.hasHost() {
-		host.Execute(i.Command)
-		return
-	}
-
-	sh, _ := exec.LookPath("sh")
-	args := []string{sh, "-c", i.Command}
-
-	cmd := exec.Cmd{
-		Path:   sh,
-		Args:   args,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-	err := cmd.Run()
-	if err != nil {
-		log.Fatal("oh noes :(")
-	}
-
 }
 
 // ExecuteHost opens a ssh connection to the specified host
