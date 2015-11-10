@@ -1,17 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"github.com/codegangsta/cli"
+	"sort"
 )
 
 // BuildCLI builds the base CLI App() object
 func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 	app = cli.NewApp()
-	app.Name = "sagacity"
+	app.Name = "sp"
+	app.EnableBashCompletion = true
 	app.Usage = "spread and use knowledge!"
 
-	app.Commands = []cli.Command{
+	repolen := len(repos)
+	commands := make([]cli.Command, 0, repolen+2)
+
+	keys := make([]string, 0, repolen)
+	for key := range repos {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+	for _, key := range keys {
+		repo := repos[key]
+		commands = append(commands, repo.MakeCLI())
+	}
+
+	// Repo management commands are always present.
+	commands = append(commands, []cli.Command{
 		{
 			Name:    "repo",
 			Aliases: []string{"r"},
@@ -36,27 +52,8 @@ func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 				},
 			},
 		},
-	}
+	}...)
 
-	app.Action = func(c *cli.Context) {
-		// No arguments - print a sorted list of repositories
-		args := c.Args()
-		if len(args) == 0 {
-			ListRepos(repos)
-			return
-		}
-
-		// More arguments.
-		// If the first argument given matches a repo, use that one and run
-		// repo.Execute() with the cli context so it can determine what to do.
-		//
-		// If not, list the available repositories.
-		if repo, ok := repos[args[0]]; ok {
-			repo.Execute(c)
-		} else {
-			fmt.Printf("%s: no such repo. Available repos are:\n\n", args[0])
-			ListRepos(repos)
-		}
-	}
+	app.Commands = commands
 	return
 }

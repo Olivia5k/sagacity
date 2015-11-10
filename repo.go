@@ -19,6 +19,7 @@ import (
 type Repo struct {
 	Key      string `yaml:"key"`
 	Summary  string `yaml:"summary"`
+	Alias    string `yaml:"alias"`
 	Info     map[string]Info
 	Control  map[string]Info
 	Subrepos map[string]Repo
@@ -250,6 +251,42 @@ func (r *Repo) ParentRepo() *Repo {
 		return r
 	}
 	return r.Parent
+}
+
+// MakeCLI generates a cli.Command chain based on the repository structure
+func (r *Repo) MakeCLI() (c cli.Command) {
+	c = cli.Command{
+		Name:    r.Key,
+		Usage:   r.Summary,
+		Aliases: []string{r.Alias},
+	}
+
+	// Make a list of subcommands to add into the Command.
+	subcommands := make([]cli.Command, 0, len(r.Info)+len(r.Subrepos))
+
+	// Loop over the subrepositories first, making sure that they are on top.
+	for _, key := range r.SubrepoKeys() {
+		subrepo := r.Subrepos[key]
+		subcommands = append(subcommands, subrepo.MakeCLI())
+	}
+
+	// Then loop the info files.
+	for _, key := range r.Keys() {
+		info := r.Info[key]
+
+		sc := cli.Command{
+			Name:  info.ID,
+			Usage: info.Summary,
+			Action: func(c *cli.Context) {
+				info.Execute(r, c.Args())
+			},
+		}
+		subcommands = append(subcommands, sc)
+	}
+
+	c.Subcommands = subcommands
+
+	return
 }
 
 func (r *Repo) walk(path string, info os.FileInfo, err error) error {
