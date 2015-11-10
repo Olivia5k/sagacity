@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,7 +17,8 @@ import (
 
 // Repo represents a repository of information yaml files.
 type Repo struct {
-	Key      string
+	Key      string `yaml:"key"`
+	Summary  string `yaml:"summary"`
 	Info     map[string]Info
 	Control  map[string]Info
 	Subrepos map[string]Repo
@@ -72,7 +74,21 @@ func AddRepo(root, name, url string) {
 
 // NewRepo loads a repository on a path
 func NewRepo(p string) (r Repo) {
-	r = Repo{Key: asKey(p), root: getPath(p)}
+	p = getPath(p)
+	r = Repo{Key: asKey(p), root: p}
+
+	// Check if this is a root repo. If it is, load the data from the _repo.yaml file into
+	// the newly created repo.
+	rfile := filepath.Join(p, "_repo.yaml")
+	if _, err := os.Stat(rfile); !os.IsNotExist(err) {
+		data, err := ioutil.ReadFile(rfile)
+
+		if err != nil {
+			log.Fatal("Reading repo file failed: ", p)
+		}
+		yaml.Unmarshal(data, &r)
+	}
+
 	r.Info = make(map[string]Info)
 	r.Control = make(map[string]Info)
 	r.Subrepos = make(map[string]Repo)
