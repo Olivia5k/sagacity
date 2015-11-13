@@ -325,7 +325,7 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 func (r *Repo) loadInfo(path string) {
 	defer r.wg.Done()
 
-	info, err := LoadInfo(path)
+	info, err := LoadInfo(r, path)
 	if err != nil {
 		log.Println("Failed to load info: ", err)
 	}

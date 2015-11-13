@@ -13,7 +13,7 @@ import (
 )
 
 // LoadInfo loads an Info object from a file path
-func LoadInfo(p string) (i Info, err error) {
+func LoadInfo(r *Repo, p string) (i Info, err error) {
 	data, err := ioutil.ReadFile(p)
 	if err != nil {
 		log.Fatal("Reading file failed: ", p)
@@ -33,6 +33,7 @@ type Info struct {
 	Command Command             `yaml:"command"`
 	Hosts   map[string]Category `yaml:"types"`
 	path    string
+	repo    *Repo
 }
 
 func (i Info) String() string {
