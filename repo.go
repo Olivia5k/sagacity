@@ -238,7 +238,7 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 			Usage:    info.Summary,
 			HideHelp: true,
 			Action: func(c *cli.Context) {
-				info.Execute(r, c.Args())
+				info.Execute(r, c)
 			},
 		}
 

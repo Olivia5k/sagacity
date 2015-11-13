@@ -41,13 +41,13 @@ func (i Info) String() string {
 }
 
 // Execute will figure out the type of the info and execute accordingly
-func (i *Info) Execute(r *Repo, c cli.Args) {
+func (i *Info) Execute(r *Repo, c *cli.Context) {
 	if i.Type == "info" {
 		i.PrintBody()
 	} else if i.Type == "command" {
-		i.Command.Execute(r, c)
+		i.Command.Execute(r, c.Args())
 	} else if i.Type == "host" {
-		i.ExecuteHost(c)
+		i.ExecuteHost(c.Args())
 	} else {
 		log.Fatal("Unknown type:", i.Type)
 	}
