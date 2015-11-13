@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/fatih/color"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -135,46 +134,6 @@ func (r *Repo) SubrepoKeys() []string {
 	sort.Strings(keys)
 
 	return keys
-}
-
-// Execute determine what to do:
-//
-// If the last argument in the command line from c.Args() given points to a
-// repo, the index of the loop will be printed.
-//
-// If the last argument is an Info item, it will be executed.
-func (r *Repo) Execute(c *cli.Context) {
-	var repo *Repo
-	var remaining []string
-	repo = r
-
-	// The first argument is not needed since it was used to determine the
-	// location to this very repo.
-	args := c.Args()[1:]
-
-	if len(args) != 0 {
-		// No Info was found. Figure out if there is a subrepo in the query somewhere
-		// TODO(thiderman): Handle if there are remaining left.
-		repo, remaining, _ = r.GetSubrepo(args)
-
-		if len(remaining) > 0 {
-			// Try to find the Info. If it is found, execute it and don't do anything else.
-			if info, ok := repo.Info[remaining[0]]; ok {
-				info.Execute(repo, remaining[1:])
-				return
-			}
-		}
-	}
-
-	// Nothing matched, or the end node is a repo. Print the contents,
-	// beginning with a blue listing of subrepos
-	blue := color.New(color.FgBlue, color.Bold).SprintfFunc()
-	for _, key := range repo.SubrepoKeys() {
-		fmt.Println(blue(key))
-	}
-	for _, key := range repo.Keys() {
-		fmt.Println(key)
-	}
 }
 
 // GetHost will return a Host as defined by the list of arguments
