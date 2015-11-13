@@ -284,42 +284,7 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 		}
 
 		if info.Type == "host" {
-			sc.Subcommands = make([]cli.Command, 0, len(info.Hosts))
-			for key, cat := range info.Hosts {
-				cc := cli.Command{ // cc = category command
-					Name:        key,
-					Usage:       cat.Summary,
-					HideHelp:    true,
-					Subcommands: make([]cli.Command, 0, len(cat.Hosts)),
-					Action: func(c *cli.Context) {
-						cat.PrimaryHost().Execute("")
-					},
-				}
-				for _, host := range cat.Hosts {
-					hc := cli.Command{ // hc = host command
-						Name:     host.FQDN,
-						Usage:    host.Summary,
-						HideHelp: true,
-						Action: func(c *cli.Context) {
-							var host *Host
-							args := c.Args()
-
-							if len(args) == 0 {
-								// No extra arguments - go to the primary host
-								host = cat.PrimaryHost()
-							} else {
-								// Arguments were defined - go to the fqdn specified
-								// TODO(thiderman): Error handling, integer index handling
-								host = cat.GetHost(args[0])
-							}
-
-							host.Execute("")
-						},
-					}
-					cc.Subcommands = append(cc.Subcommands, hc)
-				}
-				sc.Subcommands = append(sc.Subcommands, cc)
-			}
+			sc.Subcommands = append(sc.Subcommands, MakeHostCLI(&info)...)
 		}
 
 		subcommands = append(subcommands, sc)

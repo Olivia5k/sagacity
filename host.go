@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
 	text "github.com/tonnerre/golang-text"
 	"log"
@@ -80,6 +81,48 @@ func PrintHost(c map[string]Category) {
 		}
 		fmt.Println()
 	}
+}
+
+// MakeHostCLI creates the CLI tree for a Host info
+func MakeHostCLI(i *Info) []cli.Command {
+	sc := make([]cli.Command, 0, len(i.Hosts))
+	for _, key := range ListTypes(i.Hosts) {
+		cat := i.Hosts[key]
+		cc := cli.Command{ // cc = category command
+			Name:        key,
+			Usage:       cat.Summary,
+			HideHelp:    true,
+			Subcommands: make([]cli.Command, 0, len(cat.Hosts)),
+			Action: func(c *cli.Context) {
+				cat.PrimaryHost().Execute("")
+			},
+		}
+		for _, host := range cat.Hosts {
+			hc := cli.Command{ // hc = host command
+				Name:     host.FQDN,
+				Usage:    host.Summary,
+				HideHelp: true,
+				Action: func(c *cli.Context) {
+					var host *Host
+					args := c.Args()
+
+					if len(args) == 0 {
+						// No extra arguments - go to the primary host
+						host = cat.PrimaryHost()
+					} else {
+						// Arguments were defined - go to the fqdn specified
+						// TODO(thiderman): Error handling, integer index handling
+						host = cat.GetHost(args[0])
+					}
+
+					host.Execute("")
+				},
+			}
+			cc.Subcommands = append(cc.Subcommands, hc)
+		}
+		sc = append(sc, cc)
+	}
+	return sc
 }
 
 // Category defines a set category of machines
