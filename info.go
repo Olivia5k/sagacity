@@ -19,7 +19,7 @@ func LoadInfo(p string) (i Info, err error) {
 		log.Fatal("Reading file failed: ", p)
 	}
 
-	i = Info{ID: asKey(p)}
+	i = Info{ID: asKey(p), path: p}
 	yaml.Unmarshal(data, &i)
 	return
 }
@@ -32,6 +32,7 @@ type Info struct {
 	Body    string              `yaml:"body"`
 	Command Command             `yaml:"command"`
 	Hosts   map[string]Category `yaml:"types"`
+	path    string
 }
 
 func (i Info) String() string {
