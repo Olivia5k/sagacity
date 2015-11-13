@@ -29,23 +29,20 @@ func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 	// Repo management commands are always present.
 	commands = append(commands, []cli.Command{
 		{
-			Name:    "repo",
-			Aliases: []string{"r"},
-			Usage:   "repo commands",
+			Name:  "repo",
+			Usage: "repo commands",
 			Subcommands: []cli.Command{
 				{
-					Name:    "add",
-					Aliases: []string{"a"},
-					Usage:   "add new repositories",
+					Name:  "add",
+					Usage: "add new repositories",
 					Action: func(c *cli.Context) {
 						args := c.Args()
 						AddRepo(conf.RepoRoot, args[0], args[1])
 					},
 				},
 				{
-					Name:    "update",
-					Aliases: []string{"u"},
-					Usage:   "update repositories",
+					Name:  "update",
+					Usage: "update repositories",
 					Action: func(c *cli.Context) {
 						UpdateRepos(repos)
 					},

@@ -256,9 +256,8 @@ func (r *Repo) ParentRepo() *Repo {
 // MakeCLI generates a cli.Command chain based on the repository structure
 func (r *Repo) MakeCLI() (c cli.Command) {
 	c = cli.Command{
-		Name:    r.Key,
-		Usage:   r.Summary,
-		Aliases: []string{r.Alias},
+		Name:  r.Key,
+		Usage: r.Summary,
 	}
 
 	// Make a list of subcommands to add into the Command.
