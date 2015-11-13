@@ -256,8 +256,9 @@ func (r *Repo) ParentRepo() *Repo {
 // MakeCLI generates a cli.Command chain based on the repository structure
 func (r *Repo) MakeCLI() (c cli.Command) {
 	c = cli.Command{
-		Name:  r.Key,
-		Usage: r.Summary,
+		Name:     r.Key,
+		Usage:    r.Summary,
+		HideHelp: true,
 	}
 
 	// Make a list of subcommands to add into the Command.
@@ -274,8 +275,9 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 		info := r.Info[key]
 
 		sc := cli.Command{
-			Name:  info.ID,
-			Usage: info.Summary,
+			Name:     info.ID,
+			Usage:    info.Summary,
+			HideHelp: true,
 			Action: func(c *cli.Context) {
 				info.Execute(r, c.Args())
 			},
@@ -287,6 +289,7 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 				cc := cli.Command{ // cc = category command
 					Name:        key,
 					Usage:       cat.Summary,
+					HideHelp:    true,
 					Subcommands: make([]cli.Command, 0, len(cat.Hosts)),
 					Action: func(c *cli.Context) {
 						cat.PrimaryHost().Execute("")
@@ -294,8 +297,9 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 				}
 				for _, host := range cat.Hosts {
 					hc := cli.Command{ // hc = host command
-						Name:  host.FQDN,
-						Usage: host.Summary,
+						Name:     host.FQDN,
+						Usage:    host.Summary,
+						HideHelp: true,
 						Action: func(c *cli.Context) {
 							var host *Host
 							args := c.Args()
