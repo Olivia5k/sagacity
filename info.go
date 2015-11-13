@@ -3,13 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	// "github.com/fatih/color"
 	text "github.com/tonnerre/golang-text"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
-	// "os/exec"
 	"strconv"
 	"strings"
 )

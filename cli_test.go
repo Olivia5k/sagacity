@@ -1,8 +1,6 @@
 package main
 
-import (
-// "testing"
-)
+import ()
 
 func ExampleCliNoArguments() {
 	repos := map[string]Repo{
