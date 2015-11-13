@@ -61,21 +61,6 @@ func (c *Command) Execute(r *Repo, cl cli.Args) {
 	host := repo.GetHost(hostdef)
 	host.Execute(c.Command)
 	return
-
-	// sh, _ := exec.LookPath("sh")
-	// args := []string{sh, "-c", c.Command}
-
-	// cmd := exec.Cmd{
-	// 	Path:   sh,
-	// 	Args:   args,
-	// 	Stdout: os.Stdout,
-	// 	Stderr: os.Stderr,
-	// }
-	// err := cmd.Run()
-	// if err != nil {
-	// 	log.Fatal("oh noes :(")
-	// }
-
 }
 
 func (c *Command) getHosts(args cli.Args) (names []string) {
