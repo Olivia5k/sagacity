@@ -102,6 +102,16 @@ func (c *Category) PrimaryHost() (h *Host) {
 	return &c.Hosts[0]
 }
 
+// GetHost returns a specific host, based on FQDN
+func (c *Category) GetHost(fqdn string) (h *Host) {
+	for _, host := range c.Hosts {
+		if host.FQDN == fqdn {
+			return &host
+		}
+	}
+	return
+}
+
 // Host is a representation of one host
 type Host struct {
 	FQDN    string `yaml:"fqdn"`
