@@ -5,7 +5,34 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
 	"os"
+	"sort"
 )
+
+func commandHostKey(hosts map[string]string) []string {
+	ret := make([]string, 0, len(hosts))
+	for _, host := range hosts {
+		ret = append(ret, host)
+	}
+
+	sort.Strings(ret)
+	return ret
+}
+
+// MakeCommandCLI creates the CLI tree for a Command info
+func MakeCommandCLI(i *Info) []cli.Command {
+	sc := make([]cli.Command, 0, len(i.Command.Hosts))
+	for _, key := range commandHostKey(i.Command.Hosts) {
+		cc := cli.Command{
+			Name:     key,
+			HideHelp: true,
+			Action: func(c *cli.Context) {
+				i.Command.Execute(i.repo, c.Args())
+			},
+		}
+		sc = append(sc, cc)
+	}
+	return sc
+}
 
 // Command is a representation of an executable command
 type Command struct {

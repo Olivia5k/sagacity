@@ -285,6 +285,8 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 
 		if info.Type == "host" {
 			sc.Subcommands = append(sc.Subcommands, MakeHostCLI(&info)...)
+		} else if info.Type == "command" {
+			sc.Subcommands = append(sc.Subcommands, MakeCommandCLI(&info)...)
 		}
 
 		subcommands = append(subcommands, sc)
