@@ -11,6 +11,7 @@ func BuildCLI(repos map[string]Repo, conf Config) (app *cli.App) {
 	app.Name = "sp"
 	app.EnableBashCompletion = true
 	app.Usage = "spread and use knowledge!"
+	app.HideHelp = true
 
 	repolen := len(repos)
 	commands := make([]cli.Command, 0, repolen+2)
