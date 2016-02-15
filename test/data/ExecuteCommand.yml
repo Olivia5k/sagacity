@@ -1,0 +1,7 @@
+type: command
+body: ExecuteInfo content
+command:
+  summary: Dummy command to get output.
+  command: echo "Should there be a 4chan ipsum?"
+  hosts:
+    - localhost
