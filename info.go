@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	text "github.com/tonnerre/golang-text"
+	"github.com/tonnerre/golang-text"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -45,9 +45,11 @@ func (i *Info) Execute(r *Repo, c *cli.Context) {
 	if i.Type == "info" {
 		i.PrintBody()
 	} else if i.Type == "command" {
-		i.Command.Execute(r, c.Args())
+		a := c.Args()
+		i.Command.Execute(r, a)
 	} else if i.Type == "host" {
-		i.ExecuteHost(c.Args())
+		a := c.Args()
+		i.ExecuteHost(a)
 	} else {
 		log.Fatal("Unknown type:", i.Type)
 	}
