@@ -13,13 +13,13 @@ import (
 )
 
 // LoadInfo loads an Info object from a file path
-func LoadInfo(r *Repo, p string) (i Info, err error) {
+func LoadInfo(r *Repo, p string) (i *Info, err error) {
 	data, err := ioutil.ReadFile(p)
 	if err != nil {
 		log.Fatal("Reading file failed: ", p)
 	}
 
-	i = Info{ID: asKey(p), path: p}
+	i = &Info{ID: asKey(p), path: p}
 	yaml.Unmarshal(data, &i)
 	return
 }
@@ -36,7 +36,7 @@ type Info struct {
 	repo    *Repo
 }
 
-func (i Info) String() string {
+func (i *Info) String() string {
 	return fmt.Sprintf("I: %s", i.ID)
 }
 

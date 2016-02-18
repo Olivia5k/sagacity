@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 )
 
 // Repo represents a repository of information yaml files.
@@ -19,12 +18,11 @@ type Repo struct {
 	Key      string `yaml:"key"`
 	Summary  string `yaml:"summary"`
 	Alias    string `yaml:"alias"`
-	Info     map[string]Info
-	Control  map[string]Info
-	Subrepos map[string]Repo
+	Info     map[string]*Info
+	Control  map[string]*Info
+	Subrepos map[string]*Repo
 	Parent   *Repo
 	root     string
-	wg       sync.WaitGroup
 }
 
 func (r Repo) String() string {
@@ -32,10 +30,10 @@ func (r Repo) String() string {
 }
 
 // LoadRepos loads multiple repositories and stores them
-func LoadRepos(p string) (repos map[string]Repo) {
-	repos = make(map[string]Repo)
+func LoadRepos(p string) (repos map[string]*Repo) {
+	repos = make(map[string]*Repo)
 	p = getPath(p)
-	wg := sync.WaitGroup{}
+	cr := make(chan *Repo)
 
 	files, _ := ioutil.ReadDir(p)
 	for _, file := range files {
@@ -46,14 +44,18 @@ func LoadRepos(p string) (repos map[string]Repo) {
 			continue
 		}
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			repos[asKey(fn)] = NewRepo(fn)
-		}()
+		go NewRepo(cr, fn)
 	}
 
-	wg.Wait()
+	for x := 0; x < len(files); x++ {
+		select {
+		case r := <-cr:
+			if r != nil {
+				repos[r.Key] = r
+			}
+		}
+	}
+
 	return
 }
 
@@ -73,9 +75,9 @@ func AddRepo(root, name, url string) {
 }
 
 // NewRepo loads a repository on a path
-func NewRepo(p string) (r Repo) {
+func NewRepo(c chan<- *Repo, p string) {
 	p = getPath(p)
-	r = Repo{Key: asKey(p), root: p}
+	r := Repo{Key: asKey(p), root: p}
 
 	// Check if this is a root repo. If it is, load the data from the _repo.yaml file into
 	// the newly created repo.
@@ -89,14 +91,13 @@ func NewRepo(p string) (r Repo) {
 		yaml.Unmarshal(data, &r)
 	}
 
-	r.Info = make(map[string]Info)
-	r.Control = make(map[string]Info)
-	r.Subrepos = make(map[string]Repo)
+	r.Info = make(map[string]*Info)
+	r.Control = make(map[string]*Info)
+	r.Subrepos = make(map[string]*Repo)
 
 	filepath.Walk(r.root, r.walk)
-	r.wg.Wait()
 
-	return
+	c <- &r
 }
 
 // ListRepos prints a sorted list of available repostiories.
@@ -162,7 +163,7 @@ func (r *Repo) GetHost(def string) (h *Host) {
 //
 // If successful, a *Info is returned along with the remaining unparsed arguments.
 func (r *Repo) GetInfo(args []string) (*Info, []string, error) {
-	var info Info
+	var info *Info
 	var ok bool
 
 	repo, remaining, err := r.GetSubrepo(args)
@@ -174,7 +175,7 @@ func (r *Repo) GetInfo(args []string) (*Info, []string, error) {
 	}
 
 	if info, ok = repo.Info[remaining[0]]; ok {
-		return &info, remaining[1:], nil
+		return info, remaining[1:], nil
 	}
 
 	return nil, []string{}, errors.New("No matching Info found.")
@@ -243,9 +244,9 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 		}
 
 		if info.Type == "host" {
-			sc.Subcommands = append(sc.Subcommands, MakeHostCLI(&info)...)
+			sc.Subcommands = append(sc.Subcommands, MakeHostCLI(info)...)
 		} else if info.Type == "command" {
-			sc.Subcommands = append(sc.Subcommands, MakeCommandCLI(&info)...)
+			sc.Subcommands = append(sc.Subcommands, MakeCommandCLI(info)...)
 		}
 
 		subcommands = append(subcommands, sc)
@@ -268,7 +269,6 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 	}
 
 	if info.IsDir() && r.isSubrepo(path) {
-		r.wg.Add(1)
 		go r.loadSubrepo(path)
 
 		// Return SkipDir since the directory will be parsed by the
@@ -276,7 +276,6 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 		return filepath.SkipDir
 
 	} else if strings.HasSuffix(path, ".yaml") {
-		r.wg.Add(1)
 		go r.loadInfo(path)
 	}
 
@@ -284,8 +283,6 @@ func (r *Repo) walk(path string, info os.FileInfo, err error) error {
 }
 
 func (r *Repo) loadInfo(path string) {
-	defer r.wg.Done()
-
 	info, err := LoadInfo(r, path)
 	if err != nil {
 		log.Println("Failed to load info: ", err)
@@ -301,8 +298,9 @@ func (r *Repo) loadInfo(path string) {
 }
 
 func (r *Repo) loadSubrepo(path string) {
-	defer r.wg.Done()
-	nr := NewRepo(path)
+	cc := make(chan *Repo)
+	NewRepo(cc, path)
+	nr := <-cc
 	nr.Parent = r
 	r.Subrepos[nr.Key] = nr
 }
