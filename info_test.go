@@ -5,26 +5,25 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/stretchr/testify/assert"
 	"log"
-	"os"
 	"testing"
 )
 
 var (
-	repos map[string]Repo
+	repos map[string]*Repo
 	repo  *Repo
 	ctx   *cli.Context
 )
 
-func TestMain(m *testing.M) {
-	repos = LoadRepos("test/")
-	d := repos["data"]
-	ctx = &cli.Context{}
-	repo = &d
+// func TestMain(m *testing.M) {
+// 	repos = LoadRepos("test/")
+// 	d := repos["data"]
+// 	ctx = &cli.Context{}
+// 	repo = d
 
-	retCode := m.Run()
+// 	retCode := m.Run()
 
-	os.Exit(retCode)
-}
+// 	os.Exit(retCode)
+// }
 
 func loadTestFile(fn string) *Info {
 	fn = fmt.Sprintf("test/data/%s.yml", fn)
@@ -33,7 +32,7 @@ func loadTestFile(fn string) *Info {
 		log.Fatal(err)
 	}
 
-	return &i
+	return i
 }
 
 func TestLoadInfo(t *testing.T) {
@@ -46,12 +45,12 @@ func TestLoadInfo(t *testing.T) {
 	assert.Equal(i.Type, "info")
 }
 
-// Executing an info item is just supposed to print the contents.
-func ExampleExecuteInfo() {
-	i := loadTestFile("ExecuteInfo")
-	i.Execute(repo, ctx)
-	// Output: ExecuteInfo content
-}
+// // Executing an info item is just supposed to print the contents.
+// func ExampleExecuteInfo() {
+// 	i := loadTestFile("ExecuteInfo")
+// 	i.Execute(repo, ctx)
+// 	// Output: ExecuteInfo content
+// }
 
 // TODO(thiderman): Fix this by implementing it
 // // Executing a command item is harder to test. The yaml file is just set to echo something.

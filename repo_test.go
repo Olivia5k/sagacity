@@ -29,6 +29,7 @@ func TestNewRepoLoadsTheFirstFile(t *testing.T) {
 	dir := "test/data/"
 	r := NewRepo(dir)
 
+	assert.True(len(r.Info) >= 1)
 	assert.Equal(r.Info["first"].ID, "first")
 }
 

@@ -35,6 +35,7 @@ func LoadRepos(p string) (repos map[string]*Repo) {
 	p = getPath(p)
 	cr := make(chan *Repo)
 
+	started := 0
 	files, _ := ioutil.ReadDir(p)
 	for _, file := range files {
 		fn := filepath.Join(p, file.Name())
@@ -44,15 +45,16 @@ func LoadRepos(p string) (repos map[string]*Repo) {
 			continue
 		}
 
-		go NewRepo(cr, fn)
+		started++
+		go func(c chan<- *Repo, fn string) {
+			c <- NewRepo(fn)
+		}(cr, fn)
 	}
 
-	for x := 0; x < len(files); x++ {
-		select {
-		case r := <-cr:
-			if r != nil {
-				repos[r.Key] = r
-			}
+	for x := 0; x < started; x++ {
+		r := <-cr
+		if r != nil {
+			repos[r.Key] = r
 		}
 	}
 
@@ -60,7 +62,7 @@ func LoadRepos(p string) (repos map[string]*Repo) {
 }
 
 // UpdateRepos will run git pull on the repos
-func UpdateRepos(repos map[string]Repo) {
+func UpdateRepos(repos map[string]*Repo) {
 	for key, repo := range repos {
 		log.Printf("Updating %s...", key)
 		repo.git("pull", "origin", "master")
@@ -75,7 +77,10 @@ func AddRepo(root, name, url string) {
 }
 
 // NewRepo loads a repository on a path
-func NewRepo(c chan<- *Repo, p string) {
+func NewRepo(p string) *Repo {
+	var subdirs []string
+	var infos []string
+
 	p = getPath(p)
 	r := Repo{Key: asKey(p), root: p}
 
@@ -95,9 +100,61 @@ func NewRepo(c chan<- *Repo, p string) {
 	r.Control = make(map[string]*Info)
 	r.Subrepos = make(map[string]*Repo)
 
-	filepath.Walk(r.root, r.walk)
+	files, _ := ioutil.ReadDir(p)
 
-	c <- &r
+	// Loop through the files and put files and dirs in different lists
+	for _, f := range files {
+		fn := filepath.Join(p, f.Name())
+		// Dotfile, like .git or whatever. Skip.
+		if strings.HasPrefix(filepath.Base(fn), ".") {
+			continue
+		}
+
+		if f.IsDir() {
+			subdirs = append(subdirs, fn)
+		} else if strings.HasSuffix(fn, ".yaml") {
+			infos = append(infos, fn)
+		}
+	}
+
+	cs := make(chan *Repo, len(subdirs)) // Sub-repo channel
+	ci := make(chan *Info, len(infos))   // Info channel
+
+	// Start parsing subrepos
+	for _, dir := range subdirs {
+		go func(cs chan<- *Repo, dir string) {
+			nr := NewRepo(dir)
+			cs <- nr
+		}(cs, dir)
+	}
+
+	// Start parsing infos
+	for _, fn := range infos {
+		go func(ci chan<- *Info, fn string) {
+			ni := r.loadInfo(fn)
+			ci <- ni
+		}(ci, fn)
+	}
+
+	// Drain the infos first
+	for x := 0; x < len(infos); x++ {
+		info := <-ci
+		// Control files start with an underscore and should not be stored as
+		// normal Info documents.
+		if strings.HasPrefix(asKey(info.path), "_") {
+			r.Control[info.ID] = info
+		} else {
+			r.Info[info.ID] = info
+		}
+	}
+
+	// And then drain the subrepos
+	for x := 0; x < len(subdirs); x++ {
+		sub := <-cs
+		r.Subrepos[sub.Key] = sub
+	}
+
+	return &r
 }
 
 // ListRepos prints a sorted list of available repostiories.
@@ -257,61 +314,12 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 	return
 }
 
-func (r *Repo) walk(path string, info os.FileInfo, err error) error {
-	if err != nil {
-		log.Println("walk error: ", err)
-		return err
-	}
-
-	// Dotfile, like .git or whatever. Skip.
-	if strings.HasPrefix(filepath.Base(path), ".") {
-		return filepath.SkipDir
-	}
-
-	if info.IsDir() && r.isSubrepo(path) {
-		go r.loadSubrepo(path)
-
-		// Return SkipDir since the directory will be parsed by the
-		// NewRepo call inside of loadSubrepo()
-		return filepath.SkipDir
-
-	} else if strings.HasSuffix(path, ".yaml") {
-		go r.loadInfo(path)
-	}
-
-	return nil
-}
-
-func (r *Repo) loadInfo(path string) {
+func (r *Repo) loadInfo(path string) *Info {
 	info, err := LoadInfo(r, path)
 	if err != nil {
 		log.Println("Failed to load info: ", err)
 	}
-
-	// Control files start with an underscore and should not be stored as
-	// normal Info documents.
-	if strings.HasPrefix(asKey(path), "_") {
-		r.Control[info.ID] = info
-	} else {
-		r.Info[info.ID] = info
-	}
-}
-
-func (r *Repo) loadSubrepo(path string) {
-	cc := make(chan *Repo)
-	NewRepo(cc, path)
-	nr := <-cc
-	nr.Parent = r
-	r.Subrepos[nr.Key] = nr
-}
-
-func (r *Repo) isSubrepo(path string) bool {
-	// This is the root...
-	if r.root == path {
-		return false
-	}
-
-	return true
+	return info
 }
 
 // Helper to run git commands inside of a repository
