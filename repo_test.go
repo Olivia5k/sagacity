@@ -29,8 +29,8 @@ func TestNewRepoLoadsTheFirstFile(t *testing.T) {
 	dir := "test/data/"
 	r := NewRepo(dir)
 
-	assert.True(len(r.Info) >= 1)
-	assert.Equal(r.Info["first"].ID, "first")
+	assert.True(len(r.Items) >= 1)
+	assert.Equal(r.Items["first"].ID(), "first")
 }
 
 func TestNewRepoHandlesControlFiles(t *testing.T) {
@@ -38,7 +38,7 @@ func TestNewRepoHandlesControlFiles(t *testing.T) {
 	dir := "test/data/"
 	r := NewRepo(dir)
 
-	assert.Equal(len(r.Info), 2)
+	assert.Equal(len(r.Items), 2)
 	assert.Equal(len(r.Control), 1)
 }
 
@@ -47,9 +47,9 @@ func TestNewRepoLoadsMultipleFiles(t *testing.T) {
 	dir := "test/data/"
 	r := NewRepo(dir)
 
-	assert.Equal(r.Info["first"].ID, "first")
-	assert.Equal(r.Info["second"].ID, "second")
-	assert.Equal(len(r.Info), 2)
+	assert.Equal(r.Items["first"].ID(), "first")
+	assert.Equal(r.Items["second"].ID(), "second")
+	assert.Equal(len(r.Items), 2)
 }
 
 // Generate tons of junk files, and check that none of them are loaded
@@ -59,7 +59,7 @@ func TestNewRepoIgnoresNonYamlJunk(t *testing.T) {
 	createJunk(dir)
 	r := NewRepo(dir)
 
-	assert.Equal(len(r.Info), 0)
+	assert.Equal(len(r.Items), 0)
 	assert.Equal(len(r.Control), 0)
 }
 
@@ -75,7 +75,8 @@ func TestNewRepoNestsDeep(t *testing.T) {
 	four := three.Subrepos["four"]
 	five := four.Subrepos["five"]
 
-	assert.Equal(five.Info["first"].Body, "glitteringprizes")
+	assert.Equal(1, len(five.Items))
+	assert.Equal("deepest", five.Items["deepest"].ID())
 }
 
 func TestNewRepoNestsDeepAndDoesNotPutItemsOnTopLevels(t *testing.T) {
@@ -90,9 +91,9 @@ func TestNewRepoNestsDeepAndDoesNotPutItemsOnTopLevels(t *testing.T) {
 	four := three.Subrepos["four"]
 	five := four.Subrepos["five"]
 
-	assert.Equal(len(one.Info), 0)
-	assert.Equal(len(two.Info), 0)
-	assert.Equal(len(three.Info), 0)
-	assert.Equal(len(four.Info), 0)
-	assert.Equal(len(five.Info), 1)
+	assert.Equal(len(one.Items), 0)
+	assert.Equal(len(two.Items), 0)
+	assert.Equal(len(three.Items), 0)
+	assert.Equal(len(four.Items), 0)
+	assert.Equal(len(five.Items), 1)
 }

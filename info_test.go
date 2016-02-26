@@ -25,9 +25,9 @@ var (
 // 	os.Exit(retCode)
 // }
 
-func loadTestFile(fn string) *Info {
+func loadTestFile(fn string) Item {
 	fn = fmt.Sprintf("test/data/%s.yml", fn)
-	i, err := LoadInfo(repo, fn)
+	i, err := LoadItem(repo, fn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,11 +38,11 @@ func loadTestFile(fn string) *Info {
 func TestLoadInfo(t *testing.T) {
 	assert := assert.New(t)
 	fn := "test/data/first.yaml"
-	i, err := LoadInfo(&Repo{}, fn)
+	i, err := LoadItem(&Repo{}, fn)
 
 	assert.Nil(err)
-	assert.Equal(i.ID, "first")
-	assert.Equal(i.Type, "info")
+	assert.Equal(i.ID(), "first")
+	assert.Equal(i.Type(), "info")
 }
 
 // // Executing an info item is just supposed to print the contents.

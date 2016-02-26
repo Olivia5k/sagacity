@@ -18,15 +18,15 @@ type Repo struct {
 	Key      string `yaml:"key"`
 	Summary  string `yaml:"summary"`
 	Alias    string `yaml:"alias"`
-	Info     map[string]*Info
-	Control  map[string]*Info
+	Items    map[string]Item
+	Control  map[string]Item
 	Subrepos map[string]*Repo
 	Parent   *Repo
 	root     string
 }
 
 func (r Repo) String() string {
-	return fmt.Sprintf("R: %s (%d articles)", r.Key, len(r.Info))
+	return fmt.Sprintf("R: %s (%d articles)", r.Key, len(r.Items))
 }
 
 // LoadRepos loads multiple repositories and stores them
@@ -79,7 +79,7 @@ func AddRepo(root, name, url string) {
 // NewRepo loads a repository on a path
 func NewRepo(p string) *Repo {
 	var subdirs []string
-	var infos []string
+	var items []string
 
 	p = getPath(p)
 	r := Repo{Key: asKey(p), root: p}
@@ -96,8 +96,8 @@ func NewRepo(p string) *Repo {
 		yaml.Unmarshal(data, &r)
 	}
 
-	r.Info = make(map[string]*Info)
-	r.Control = make(map[string]*Info)
+	r.Items = make(map[string]Item)
+	r.Control = make(map[string]Item)
 	r.Subrepos = make(map[string]*Repo)
 
 	files, _ := ioutil.ReadDir(p)
@@ -113,12 +113,12 @@ func NewRepo(p string) *Repo {
 		if f.IsDir() {
 			subdirs = append(subdirs, fn)
 		} else if strings.HasSuffix(fn, ".yaml") {
-			infos = append(infos, fn)
+			items = append(items, fn)
 		}
 	}
 
 	cs := make(chan *Repo, len(subdirs)) // Sub-repo channel
-	ci := make(chan *Info, len(infos))   // Info channel
+	ci := make(chan Item, len(items))    // item channel
 
 	// Start parsing subrepos
 	for _, dir := range subdirs {
@@ -128,23 +128,25 @@ func NewRepo(p string) *Repo {
 		}(cs, dir)
 	}
 
-	// Start parsing infos
-	for _, fn := range infos {
-		go func(ci chan<- *Info, fn string) {
-			ni := r.loadInfo(fn)
+	// Start parsing items
+	for _, fn := range items {
+		go func(ci chan<- Item, fn string) {
+			ni := r.loadItem(fn)
 			ci <- ni
 		}(ci, fn)
 	}
 
-	// Drain the infos first
-	for x := 0; x < len(infos); x++ {
-		info := <-ci
+	// Drain the items first
+	for x := 0; x < len(items); x++ {
+		item := <-ci
 		// Control files start with an underscore and should not be stored as
-		// normal Info documents.
-		if strings.HasPrefix(asKey(info.path), "_") {
-			r.Control[info.ID] = info
+		// normal Item documents.
+		path := item.Path()
+		id := item.ID()
+		if strings.HasPrefix(asKey(path), "_") {
+			r.Control[id] = item
 		} else {
-			r.Info[info.ID] = info
+			r.Items[id] = item
 		}
 	}
 
@@ -172,9 +174,9 @@ func ListRepos(repos map[string]Repo) {
 
 // Keys returns a sorted list of the info keys in the repository
 func (r *Repo) Keys() []string {
-	keys := make([]string, 0, len(r.Info))
-	for _, info := range r.Info {
-		keys = append(keys, info.ID)
+	keys := make([]string, 0, len(r.Items))
+	for _, item := range r.Items {
+		keys = append(keys, item.ID())
 	}
 
 	sort.Strings(keys)
@@ -206,21 +208,23 @@ func (r *Repo) GetHost(def string) (h *Host) {
 
 	args = append([]string{"hosts"}, args...)
 
-	info, remaining, err := r.GetInfo(args)
+	item, remaining, err := r.GetItem(args)
+	host := item.(HostInfo)
+
 	if err != nil {
 		log.Print(err)
 		log.Fatal("No host could be found")
 	}
 
-	cat := info.Hosts[remaining[0]]
+	cat := host.Types[remaining[0]]
 	return cat.PrimaryHost()
 }
 
-// GetInfo will return an Info as defined by the list of arguments
+// GetItem will return an Info as defined by the list of arguments
 //
 // If successful, a *Info is returned along with the remaining unparsed arguments.
-func (r *Repo) GetInfo(args []string) (*Info, []string, error) {
-	var info *Info
+func (r *Repo) GetItem(args []string) (Item, []string, error) {
+	var item Item
 	var ok bool
 
 	repo, remaining, err := r.GetSubrepo(args)
@@ -231,8 +235,8 @@ func (r *Repo) GetInfo(args []string) (*Info, []string, error) {
 		)
 	}
 
-	if info, ok = repo.Info[remaining[0]]; ok {
-		return info, remaining[1:], nil
+	if item, ok = repo.Items[remaining[0]]; ok {
+		return item, remaining[1:], nil
 	}
 
 	return nil, []string{}, errors.New("No matching Info found.")
@@ -253,7 +257,7 @@ func (r *Repo) GetSubrepo(args []string) (*Repo, []string, error) {
 		return repo.GetSubrepo(args[1:])
 	}
 
-	if _, ok := r.Info[arg]; !ok {
+	if _, ok := r.Items[arg]; !ok {
 		err = fmt.Errorf("Subrepo did not exist: %s", arg)
 	}
 	return r, args, err
@@ -279,7 +283,7 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 	}
 
 	// Make a list of subcommands to add into the Command.
-	subcommands := make([]cli.Command, 0, len(r.Info)+len(r.Subrepos))
+	subcommands := make([]cli.Command, 0, len(r.Items)+len(r.Subrepos))
 
 	// Loop over the subrepositories first, making sure that they are on top.
 	for _, key := range r.SubrepoKeys() {
@@ -287,24 +291,18 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 		subcommands = append(subcommands, subrepo.MakeCLI())
 	}
 
-	// Then loop the info files.
+	// Then loop the item files.
 	for _, key := range r.Keys() {
-		info := r.Info[key]
+		item := r.Items[key]
 
 		sc := cli.Command{
-			Name:     info.ID,
-			Usage:    info.Summary,
+			Name:     item.ID(),
+			Usage:    item.Summary(),
 			HideHelp: true,
-			Action: func(c *cli.Context) {
-				info.Execute(r, c)
-			},
+			Action:   item.Execute,
 		}
 
-		if info.Type == "host" {
-			sc.Subcommands = append(sc.Subcommands, MakeHostCLI(info)...)
-		} else if info.Type == "command" {
-			sc.Subcommands = append(sc.Subcommands, MakeCommandCLI(info)...)
-		}
+		sc.Subcommands = append(sc.Subcommands, item.MakeCLI()...)
 
 		subcommands = append(subcommands, sc)
 	}
@@ -314,8 +312,8 @@ func (r *Repo) MakeCLI() (c cli.Command) {
 	return
 }
 
-func (r *Repo) loadInfo(path string) *Info {
-	info, err := LoadInfo(r, path)
+func (r *Repo) loadItem(path string) Item {
+	info, err := LoadItem(r, path)
 	if err != nil {
 		log.Println("Failed to load info: ", err)
 	}
