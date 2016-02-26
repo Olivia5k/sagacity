@@ -18,15 +18,15 @@ func commandHostKey(hosts map[string]string) []string {
 	return ret
 }
 
-// MakeCommandCLI creates the CLI tree for a Command info
-func MakeCommandCLI(i *Info) []cli.Command {
-	sc := make([]cli.Command, 0, len(i.Command.Hosts))
-	for _, key := range commandHostKey(i.Command.Hosts) {
+// MakeCLI creates the CLI tree for a Command info
+func (c Command) MakeCLI() []cli.Command {
+	sc := make([]cli.Command, 0, len(c.Command.Hosts))
+	for _, key := range commandHostKey(c.Command.Hosts) {
 		cc := cli.Command{
 			Name:     key,
 			HideHelp: true,
 			Action: func(c *cli.Context) {
-				i.Command.Execute(i.repo, c.Args())
+				c.Command.Execute(c.repo, c.Args())
 			},
 		}
 		sc = append(sc, cc)
