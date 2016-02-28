@@ -15,37 +15,55 @@ type Item interface {
 	String() string
 	MakeCLI() []cli.Command
 	ID() string
+	Type() string
 	Path() string
 	Summary() string
 }
 
 // LoadItem loads an Info object from a file path
-func LoadItem(r *Repo, p string) (i Item, err error) {
+func LoadItem(r *Repo, p string) (Item, error) {
 	data, err := ioutil.ReadFile(p)
 	if err != nil {
 		log.Fatal("Reading file failed: ", p)
 	}
 
-	i = &Info{id: asKey(p), path: p}
+	// TODO(thiderman): Avoid the double unmarshal.
+	// Is there a way we can know some of the data in the stream before the unmarshal?
+	// Probably not?
+	i := &Info{id: asKey(p), path: p, repo: r}
 	yaml.Unmarshal(data, &i)
-	return
+
+	switch i.Type() {
+	case "command":
+		c := &Command{id: asKey(p), path: p, repo: r}
+		yaml.Unmarshal(data, &c)
+		return c, nil
+
+	case "host":
+		h := &HostInfo{id: asKey(p), path: p, repo: r}
+		yaml.Unmarshal(data, &h)
+		return h, nil
+	}
+
+	yaml.Unmarshal(data, &i)
+	return i, nil
 }
 
 // Info is the main storage for information. All yaml files map to this.
 type Info struct {
-	Type        string `yaml:"type"`
-	SummaryText string `yaml:"summary"`
-	Body        string `yaml:"body"`
-	id          string
-	path        string
-	repo        *Repo
+	RawType    string `yaml:"type"`
+	RawSummary string `yaml:"summary"`
+	Body       string `yaml:"body"`
+	id         string
+	path       string
+	repo       *Repo
 }
 
 func (i Info) String() string {
 	return fmt.Sprintf("I: %s", i.ID())
 }
 
-// Execute will figure out the type of the info and execute accordingly
+// Execute will print the body
 func (i Info) Execute(c *cli.Context) {
 	out := text.Wrap(i.Body, 80)
 	fmt.Println(out)
@@ -61,6 +79,11 @@ func (i Info) ID() string {
 	return i.id
 }
 
+// Type returns the type of the item
+func (i Info) Type() string {
+	return i.RawType
+}
+
 // Path returns the path of the item
 func (i Info) Path() string {
 	return i.path
@@ -68,6 +91,5 @@ func (i Info) Path() string {
 
 // Summary returns the summary of the item
 func (i Info) Summary() string {
-	// TODO(thiderman): This doesn't feel right...
-	return i.SummaryText
+	return i.RawSummary
 }

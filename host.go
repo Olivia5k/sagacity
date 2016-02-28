@@ -15,12 +15,12 @@ import (
 
 // A HostInfo is a YAML file with information about a group of hosts
 type HostInfo struct {
-	Type        string   `yaml:"type"`
-	SummaryText string   `yaml:"summary"`
-	Types       HostType `yaml:"types"`
-	id          string
-	path        string
-	repo        *Repo
+	RawType    string   `yaml:"type"`
+	RawSummary string   `yaml:"summary"`
+	Types      HostType `yaml:"types"`
+	id         string
+	path       string
+	repo       *Repo
 }
 
 func (h HostInfo) String() string {
@@ -69,6 +69,11 @@ func (h HostInfo) ID() string {
 	return h.id
 }
 
+// Type returns the Type of the item
+func (h HostInfo) Type() string {
+	return h.RawType
+}
+
 // Path returns the path of the item
 func (h HostInfo) Path() string {
 	return h.path
@@ -76,8 +81,7 @@ func (h HostInfo) Path() string {
 
 // Summary returns the summary of the item
 func (h HostInfo) Summary() string {
-	// TODO(thiderman): This doesn't feel right...
-	return h.SummaryText
+	return h.RawSummary
 }
 
 // MakeCLI creates the CLI tree for a Host info
