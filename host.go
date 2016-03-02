@@ -24,7 +24,7 @@ type HostInfo struct {
 }
 
 func (h HostInfo) String() string {
-	return fmt.Sprintf("H: %s", h.ID())
+	return fmt.Sprintf("H: %s (%d)", h.ID(), len(h.Types))
 }
 
 // Execute opens a ssh connection to the specified host
@@ -36,7 +36,8 @@ func (h HostInfo) Execute(c *cli.Context) {
 	case 0:
 		// No further arguments - we have selected a host entry but no type.
 		// Print the list of Types.
-		h.Types.PrintHost()
+		h.Types.PrintType()
+
 	case 1, 2:
 		t := args[0]
 		if cat, ok := h.Types[t]; ok {
@@ -50,7 +51,7 @@ func (h HostInfo) Execute(c *cli.Context) {
 					log.Fatal("Non-integer argument:", args[1])
 				}
 
-				host := cat.Types[x]
+				host := cat.Hosts[x]
 				host.Execute("")
 			}
 
@@ -93,13 +94,13 @@ func (h HostInfo) MakeCLI() []cli.Command {
 			Name:        key,
 			Usage:       cat.Summary,
 			HideHelp:    true,
-			Subcommands: make([]cli.Command, 0, len(cat.Types)),
+			Subcommands: make([]cli.Command, 0, len(cat.Hosts)),
 			Action: func(c *cli.Context) {
 				cat.PrimaryHost().Execute("")
 			},
 		}
 
-		for _, host := range cat.Types {
+		for _, host := range cat.Hosts {
 			hc := cli.Command{ // hc = host command
 				Name:     host.FQDN,
 				Usage:    host.Summary,
@@ -141,12 +142,12 @@ func (h HostInfo) getHosts() (Types []string) {
 type Category struct {
 	Summary string `yaml:"summary"`
 	Primary bool   `yaml:"primary"`
-	Types   []Host `yaml:"Types"`
+	Hosts   []Host `yaml:"Types"`
 }
 
 // PrimaryHost returns the primary host inside of the HostInfo
 func (c *Category) PrimaryHost() (h *Host) {
-	for _, host := range c.Types {
+	for _, host := range c.Hosts {
 		if host.Primary {
 			h = &host
 			return
@@ -154,12 +155,12 @@ func (c *Category) PrimaryHost() (h *Host) {
 	}
 
 	// No primary was found, just pick the first one
-	return &c.Types[0]
+	return &c.Hosts[0]
 }
 
 // GetHost returns a specific host, based on FQDN
 func (c *Category) GetHost(fqdn string) (h *Host) {
-	for _, host := range c.Types {
+	for _, host := range c.Hosts {
 		if host.FQDN == fqdn {
 			return &host
 		}
@@ -171,8 +172,8 @@ func (c *Category) GetHost(fqdn string) (h *Host) {
 type HostType map[string]Category
 
 // List returns a list of the types in the category map
-func (c HostType) List() (keys []string) {
-	for key := range c {
+func (h HostType) List() (keys []string) {
+	for key := range h {
 		keys = append(keys, key)
 	}
 
@@ -181,9 +182,9 @@ func (c HostType) List() (keys []string) {
 }
 
 // Hosts returns an array of all the Types in the category map
-func (c HostType) Hosts() (Types []Host) {
-	for _, cat := range c {
-		for _, host := range cat.Types {
+func (h HostType) Hosts() (Types []Host) {
+	for _, cat := range h {
+		for _, host := range cat.Hosts {
 			Types = append(Types, host)
 		}
 	}
@@ -192,17 +193,17 @@ func (c HostType) Hosts() (Types []Host) {
 }
 
 // PrimaryHost returns the primary host of the category
-func (c HostType) PrimaryHost() (h *Host) {
-	for _, cat := range c {
+func (h HostType) PrimaryHost() *Host {
+	for _, cat := range h {
 		if cat.Primary {
 			return cat.PrimaryHost()
 		}
 	}
-	return
+	return nil
 }
 
-// PrintHost prints a pretty list of the types of Types
-func (c HostType) PrintHost() {
+// PrintType prints a pretty list of the different types and their hosts
+func (h HostType) PrintType() {
 	blue := color.New(color.FgBlue, color.Bold).SprintfFunc()
 	green := color.New(color.FgGreen, color.Bold).SprintfFunc()
 	cyan := color.New(color.FgCyan, color.Bold).SprintfFunc()
@@ -210,11 +211,11 @@ func (c HostType) PrintHost() {
 	hiyellow := color.New(color.FgHiYellow, color.Bold).SprintfFunc()
 	grey := color.New(color.FgWhite).SprintfFunc()
 
-	for _, t := range c.List() {
+	for _, t := range h.List() {
 		fmt.Println(fmt.Sprintf("%s:", cyan(t)))
-		cat := c[t]
+		cat := h[t]
 		fmt.Printf("  %s\n", text.Wrap(cat.Summary, 80))
-		for x, host := range cat.Types {
+		for x, host := range cat.Hosts {
 			// Print the main host item
 			fmt.Printf(
 				"  %s%s%s %s",
@@ -244,7 +245,7 @@ func (c HostType) PrintHost() {
 type Host struct {
 	FQDN    string `yaml:"fqdn"`
 	Summary string `yaml:"summary"`
-	Type    string `yaml:"type"`
+	Kind    string `yaml:"kind"`
 	Primary bool   `yaml:"primary"`
 }
 

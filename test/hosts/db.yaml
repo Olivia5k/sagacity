@@ -1,0 +1,41 @@
+type: host
+summary: PostgreSQL database machines
+
+types:
+  master:
+    summary: Master database, read/write
+    primary: true
+    hosts:
+      - fqdn: paymentdb-a1.cluster6.company.net
+        primary: true
+
+  ro:
+    summary: Read-only slaves
+    hosts:
+      - fqdn: db2.cluster3.company.net
+      - fqdn: db5.cluster3.company.net
+      - fqdn: db6.cluster3.company.net
+      - fqdn: db4.cluster3.company.net
+        kind: longquery
+        primary: true
+        summary: Designated for long queries
+
+  wal:
+    summary: WAL archive storage machines
+    hosts:
+      - fqdn: db7.cluster3.company.net
+
+  standby:
+    summary: Hot standby machines
+    hosts:
+      - fqdn: db8.cluster3.company.net
+        primary: true
+      - fqdn: db1.cluster3.company.net
+        kind: disaster
+        summary: Hot standby, disaster recovery only
+
+  task:
+    summary: task-only db machines
+    hosts:
+      - fqdn: taskdb1.cluster6.company.net
+      - fqdn: taskdb2.cluster6.company.net
