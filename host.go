@@ -23,6 +23,24 @@ type HostInfo struct {
 	repo       *Repo
 }
 
+// HostType is a collection of categories
+type HostType map[string]Category
+
+// Category defines a set categories of machines
+type Category struct {
+	Summary string `yaml:"summary"`
+	Primary bool   `yaml:"primary"`
+	Hosts   []Host `yaml:"hosts"`
+}
+
+// Host is a representation of one host
+type Host struct {
+	FQDN    string `yaml:"fqdn"`
+	Summary string `yaml:"summary"`
+	Kind    string `yaml:"kind"`
+	Primary bool   `yaml:"primary"`
+}
+
 func (h HostInfo) String() string {
 	return fmt.Sprintf("H: %s (%d)", h.ID(), len(h.Types))
 }
@@ -138,13 +156,6 @@ func (h HostInfo) getHosts() (Types []string) {
 	return
 }
 
-// Category defines a set category of machines
-type Category struct {
-	Summary string `yaml:"summary"`
-	Primary bool   `yaml:"primary"`
-	Hosts   []Host `yaml:"Types"`
-}
-
 // PrimaryHost returns the primary host inside of the HostInfo
 func (c *Category) PrimaryHost() (h *Host) {
 	for _, host := range c.Hosts {
@@ -168,9 +179,6 @@ func (c *Category) GetHost(fqdn string) (h *Host) {
 	return
 }
 
-// HostType is a collection of categories
-type HostType map[string]Category
-
 // List returns a list of the types in the category map
 func (h HostType) List() (keys []string) {
 	for key := range h {
@@ -182,14 +190,14 @@ func (h HostType) List() (keys []string) {
 }
 
 // Hosts returns an array of all the Types in the category map
-func (h HostType) Hosts() (Types []Host) {
+func (h HostType) Hosts() (hosts []Host) {
 	for _, cat := range h {
 		for _, host := range cat.Hosts {
-			Types = append(Types, host)
+			hosts = append(hosts, host)
 		}
 	}
 
-	return Types
+	return hosts
 }
 
 // PrimaryHost returns the primary host of the category
@@ -239,14 +247,6 @@ func (h HostType) PrintType() {
 		}
 		fmt.Println()
 	}
-}
-
-// Host is a representation of one host
-type Host struct {
-	FQDN    string `yaml:"fqdn"`
-	Summary string `yaml:"summary"`
-	Kind    string `yaml:"kind"`
-	Primary bool   `yaml:"primary"`
 }
 
 // hasHost returns true if there is a Host definition and false if not.
