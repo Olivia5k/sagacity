@@ -30,25 +30,21 @@ func (r Repo) String() string {
 }
 
 // LoadRepos loads multiple repositories and stores them
-func LoadRepos(p string) (repos map[string]*Repo) {
+func LoadRepos(c *Config) (repos map[string]*Repo) {
 	repos = make(map[string]*Repo)
-	p = getPath(p)
 	cr := make(chan *Repo)
 
 	started := 0
-	files, _ := ioutil.ReadDir(p)
-	for _, file := range files {
-		fn := filepath.Join(p, file.Name())
-
-		if _, err := os.Stat(filepath.Join(fn, "_repo.yaml")); os.IsNotExist(err) {
-			log.Println(fmt.Sprintf("Skipping repo %s: no _repo.yaml found.", file.Name()))
+	for _, file := range c.Repositories {
+		if _, err := os.Stat(filepath.Join(file, "_repo.yaml")); os.IsNotExist(err) {
+			// log.Println(fmt.Sprintf("Skipping repo %s: no _repo.yaml found.", file.Name()))
 			continue
 		}
 
 		started++
 		go func(c chan<- *Repo, fn string) {
 			c <- NewRepo(fn)
-		}(cr, fn)
+		}(cr, file)
 	}
 
 	for x := 0; x < started; x++ {
