@@ -41,7 +41,7 @@ func ExampleHostType() {
 		log.Fatal("No host configuration file found: ", err)
 	}
 
-	conf := Config{}
+	conf := &Config{}
 	yaml.Unmarshal(data, &conf)
 	repos := LoadRepos(conf.RepoRoot)
 
