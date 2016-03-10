@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
+	"os"
 	"sort"
 )
 
@@ -27,34 +28,51 @@ func BuildCLI(repos map[string]*Repo, conf *Config) (app *cli.App) {
 		commands = append(commands, repo.MakeCLI())
 	}
 
-	// Repo management commands are always present.
-	commands = append(commands, []cli.Command{
-		{
-			Name:     "repo",
-			Usage:    "repo commands",
-			HideHelp: true,
-			Subcommands: []cli.Command{
-				{
-					Name:     "add",
-					Usage:    "add new repositories",
-					HideHelp: true,
-					Action: func(c *cli.Context) {
-						args := c.Args()
-						AddRepo(conf.RepoRoot, args[0], args[1])
+	// Repo management commands are only present if we are not doing bash completion.
+	if !isCompleting() {
+		commands = append(commands, []cli.Command{
+			{
+				Name:     "repo",
+				Usage:    "repo commands",
+				HideHelp: true,
+				Subcommands: []cli.Command{
+					{
+						Name:     "add",
+						Usage:    "add <url>",
+						HideHelp: true,
+						Action: func(c *cli.Context) {
+							args := c.Args()
+							AddRepo(conf, args[0])
+						},
 					},
-				},
-				{
-					Name:     "update",
-					Usage:    "update repositories",
-					HideHelp: true,
-					Action: func(c *cli.Context) {
-						UpdateRepos(repos)
+					{
+						Name:     "update",
+						Usage:    "update",
+						HideHelp: true,
+						Action: func(c *cli.Context) {
+							UpdateRepos(repos)
+						},
 					},
 				},
 			},
-		},
-	}...)
+		}...)
+	}
 
 	app.Commands = commands
 	return
+}
+
+// isCompleting returns boolean if we are doing bash completion or not
+//
+// This is only really used by BuildCLI() when determining what to show. To
+// not clutter the base command level, we avoid adding the repo management
+// commands whenever we are doing completion. Clean!
+func isCompleting() bool {
+	for _, arg := range os.Args {
+		if arg == "--generate-bash-completion" {
+			return true
+		}
+
+	}
+	return false
 }
