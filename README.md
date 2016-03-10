@@ -1,29 +1,30 @@
 # sagacity
 
-`sagacity` is a command line based knowledge base. Given `yaml` files it can
-help you:
+`sagacity` is a command line based knowledge base and execution helper.
 
-* Show and execute commands and tips.
-* Open `ssh` connections to servers based on Puppet roles.
+### Current features
+* Open `ssh` connections to servers based on their roles.
+
+### Coming features
+* Show and execute commands on single or multiple hosts.
+* Ping hosts for heart metrics.
 * Create and run dependency-graph based runsheets.
 
 ## Installation
 
 `go get -u github.com/thiderman/sagacity`
 
+For good UX in `bash` and `zsh` add the following to your shell rc:
+
+```
+PROG=sagacity source $GOPATH/src/github.com/codegangsta/cli/autocomplete/$(basename $SHELL)_autocomplete
+alias sp=sagacity
+```
+
 ## Usage
 
-* `saga repo <install|update>`
+* `sagacity repo <add|update>`
 Manage the repositories containing `yaml` recipes.
-
-* `saga search <phrase> [<phrase>, ...]`
-Search through the knowledge base and print matching
-
-* `saga <til|random>`
-Show a random article. Put this in your `$SHELL.rc`!
-
-The rest of the usage is depending on what repositories you have
-installed. The repositories contain definitions of commands
 
 ## License
 MIT. See the LICENSE file.
