@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -66,10 +67,24 @@ func UpdateRepos(repos map[string]*Repo) {
 }
 
 // AddRepo clones a new repository
-func AddRepo(root, name, url string) {
-	dir := filepath.Join(root, name)
+func AddRepo(config *Config, url string) {
+	// Clean the name of prefixes and stuff, leaving just the trailing word. This
+	// lets us use `saga-topic` or `kb-topic` or whatever and we'll still get
+	// just `topic` when we're grabbing.
+	rxp := regexp.MustCompile(".*-")
+	name := rxp.ReplaceAllString(url, "")
+
+	// Clone the repo! |o/
+	dir := filepath.Join(config.RepoRoot, name)
 	git("", "clone", url, dir)
-	log.Print("Repository added!")
+
+	// Persist the changes into the configuration file
+	err := config.AddRepo(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Added %s as %s!\n", url, name)
 }
 
 // NewRepo loads a repository on a path

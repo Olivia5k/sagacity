@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 
 	"gopkg.in/yaml.v2"
+	"os"
 	"os/user"
 	"path/filepath"
 )
@@ -26,6 +27,7 @@ func LoadConfig(fn string) *Config {
 		// Grab the user so we can find the home directory
 		u, _ := user.Current()
 		root := filepath.Join(u.HomeDir, ".local", "share", "sagacity")
+
 		return &Config{
 			RepoRoot:     root,
 			Repositories: []string{},
@@ -37,4 +39,28 @@ func LoadConfig(fn string) *Config {
 	yaml.Unmarshal(data, &c)
 
 	return &c
+}
+
+// persist saves the file to disk
+func (c *Config) persist() error {
+	// Create the directory if it doesn't exist
+	os.MkdirAll(c.RepoRoot, 0755)
+
+	d, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(c.filename, d, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AddRepo adds a new repository to the config and saves the YAML
+func (c *Config) AddRepo(dir string) error {
+	c.Repositories = append(c.Repositories, dir)
+	return c.persist()
 }
