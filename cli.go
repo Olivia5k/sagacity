@@ -6,7 +6,7 @@ import (
 )
 
 // BuildCLI builds the base CLI App() object
-func BuildCLI(repos map[string]*Repo, conf Config) (app *cli.App) {
+func BuildCLI(repos map[string]*Repo, conf *Config) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "sp"
 	app.EnableBashCompletion = true
