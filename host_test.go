@@ -42,13 +42,13 @@ func ExampleHostType() {
 	}
 
 	conf := &Config{}
-	yaml.Unmarshal(data, &conf)
-	repos := LoadRepos(conf.RepoRoot)
+	yaml.Unmarshal(data, conf)
+	repos := LoadRepos(conf)
 
 	app := BuildCLI(repos, conf)
 	app.Run([]string{"sagacity", "printout", "hosts", "db"})
 
-	// [36;1mmaster[0m:
+	// Output: [36;1mmaster[0m:
 	//   Master database, read/write
 	//   [33m[[0m[93;1m0[0m[33m][0m [34;1mdb1.cluster6.company.net[0m ([32;1mprimary[0m)
 

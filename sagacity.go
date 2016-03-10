@@ -11,7 +11,7 @@ func main() {
 	fn := filepath.Join(u.HomeDir, ".config", "sagacity", "sagacity.yaml")
 	conf := LoadConfig(fn)
 
-	repos := LoadRepos(conf.RepoRoot)
+	repos := LoadRepos(conf)
 	app := BuildCLI(repos, conf)
 	app.Run(os.Args)
 }
